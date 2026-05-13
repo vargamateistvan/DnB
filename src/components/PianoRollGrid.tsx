@@ -2,15 +2,14 @@ import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import type { KitId } from '../types'
 
-// 2 octaves, B2 (top) → C1 (bottom)
+// 1 octave, B2 (top) → C2 (bottom)
 const NOTES: string[] = [
   'B2','A#2','A2','G#2','G2','F#2','F2','E2','D#2','D2','C#2','C2',
-  'B1','A#1','A1','G#1','G1','F#1','F1','E1','D#1','D1','C#1','C1',
 ]
 
-const BTN = 22   // px — step cell size
-const GAP = 3    // px — gap between cells
-const GRP = 8    // px — gap between beat groups
+const BTN = 28   // px — step cell size (matches DrumGrid BTN_SIZE)
+const GAP = 2    // px — gap between cells (matches DrumGrid gap-0.5)
+const GRP = 6    // px — gap between beat groups (matches DrumGrid gap-1.5)
 
 // TB-303 triangle clip-path (upward-pointing ▲)
 const TRIANGLE = 'polygon(50% 0%, 0% 100%, 100% 100%)'
@@ -108,15 +107,16 @@ export function PianoRollGrid({ kitId }: Props) {
                       const isCurrent = isPlaying && (currentStep % trackStepCount) === stepIdx
                       const isBeat1   = stepIdx % 8 === 0
 
+                      const isHit = isCurrent && isActive
+
                       // ── TB-303: variable-size triangles ──────────────────
                       if (isTb303) {
-                        // Scale: active = large, other-note = medium, inactive = tiny
                         let triScale: number
-                        if (isActive)         triScale = 0.80
+                        if (isHit)            triScale = 1.05
+                        else if (isActive)    triScale = 0.80
                         else if (isOtherNote) triScale = isSharp ? 0.40 : 0.34
                         else                  triScale = isSharp ? 0.30 : 0.20
 
-                        // Color: sharp rows = dark, natural rows = light
                         let triColor: string
                         if (isActive)         triColor = isSharp ? '#1a1a1a' : '#f0f0f0'
                         else if (isOtherNote) triColor = isSharp ? 'rgba(0,0,0,0.42)' : 'rgba(0,0,0,0.26)'
@@ -137,7 +137,7 @@ export function PianoRollGrid({ kitId }: Props) {
                               } else if (note === rowNote) {
                                 toggleStep(bassTrackId, stepIdx)
                               } else {
-                                setStepNote('bass', stepIdx, rowNote)
+                                setStepNote(bassTrackId, stepIdx, rowNote)
                               }
                             }}
                             title={
@@ -153,7 +153,9 @@ export function PianoRollGrid({ kitId }: Props) {
                               backgroundColor: curColor,
                               border: 'none',
                               transform: `scale(${triScale})`,
-                              transition: 'transform 120ms ease, background-color 80ms',
+                              transition: isHit
+                                ? 'transform 35ms ease-out'
+                                : 'transform 120ms ease, background-color 80ms',
                               cursor: 'pointer',
                             }}
                           />
@@ -168,14 +170,20 @@ export function PianoRollGrid({ kitId }: Props) {
                         backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.88) 1.5px, transparent 1.5px)`,
                         backgroundSize: '5px 5px',
                         backgroundColor: `${theme.stepActive}22`,
-                        boxShadow: `0 0 6px ${theme.stepActive}60`,
+                        boxShadow: isHit
+                          ? `0 0 14px ${theme.stepActive}cc`
+                          : `0 0 6px ${theme.stepActive}60`,
+                        transform: isHit ? 'scale(1.1)' : 'scale(1)',
+                        transition: isHit
+                          ? 'transform 35ms ease-out, box-shadow 35ms'
+                          : 'transform 140ms ease, box-shadow 140ms',
                       } : {
                         backgroundColor: cellBg,
                         backgroundImage: 'none',
                         boxShadow: isCurrent ? `inset 0 0 0 1px rgba(255,255,255,0.3)` : 'none',
                       }
 
-                      const otherNoteHint = isOtherNote && !isActive
+                      const otherNoteHint = isOtherNote
                         ? { boxShadow: `inset 0 0 0 1px ${theme.stepActive}60` }
                         : {}
 
@@ -187,11 +195,11 @@ export function PianoRollGrid({ kitId }: Props) {
                             const note   = step?.note ?? 'C2'
                             if (!active) {
                               toggleStep(bassTrackId, stepIdx)
-                              setStepNote('bass', stepIdx, rowNote)
+                              setStepNote(bassTrackId, stepIdx, rowNote)
                             } else if (note === rowNote) {
                               toggleStep(bassTrackId, stepIdx)
                             } else {
-                              setStepNote('bass', stepIdx, rowNote)
+                              setStepNote(bassTrackId, stepIdx, rowNote)
                             }
                           }}
                           title={

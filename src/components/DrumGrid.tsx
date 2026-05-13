@@ -4,19 +4,7 @@ import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import { KnobControl } from './KnobControl'
 import type { KitId } from '../types'
 
-// ── Step button style per machine ─────────────────────────────────────────────
-interface StepStyle {
-  width: number
-  height: number
-  borderRadius: string
-}
-
-const STEP_STYLE: Record<string, StepStyle> = {
-  circle:   { width: 28, height: 28, borderRadius: '50%' },
-  square:   { width: 28, height: 28, borderRadius: '3px' },
-  rect:     { width: 30, height: 18, borderRadius: '2px' },
-  triangle: { width: 28, height: 28, borderRadius: '4px' },
-}
+const BTN_SIZE = 28
 
 // TR-808 velocity → color  (deep red → orange → amber → near-white)
 function velColor(v: number): string {
@@ -34,18 +22,17 @@ function velColor(v: number): string {
 
 function buildStepCss(
   kitId: KitId,
-  shape: string,
   isActive: boolean,
   isCurrent: boolean,
   isBeat1: boolean,
   velocity: number,
   activeColor: string,
   inactiveColor: string,
-  beatColor: string
+  beatColor: string,
 ): CSSProperties {
-  const s = STEP_STYLE[shape] ?? STEP_STYLE.square
+  const isPlaying = isCurrent && isActive
 
-  // TR-808: tiny dot → large velocity-colored circle
+  // TR-808: tiny dot → large velocity-colored circle, scale punch on hit
   if (kitId === 'tr808') {
     if (!isActive) {
       return {
@@ -56,14 +43,14 @@ function buildStepCss(
       }
     }
     const color = velColor(velocity)
-    const scale = 0.45 + velocity * 0.50
-    const glow = Math.round(velocity * 14)
+    const scale = isPlaying ? Math.min(1.12, 0.55 + velocity * 0.55) : 0.45 + velocity * 0.50
+    const glow = isPlaying ? 10 + Math.round(velocity * 12) : Math.round(velocity * 14)
     return {
       backgroundColor: color, borderRadius: '50%', border: 'none',
       boxShadow: `0 0 ${glow}px ${color}99`,
       transform: `scale(${scale.toFixed(3)})`,
-      transition: 'transform 120ms ease, background-color 60ms, box-shadow 60ms',
-      ...(isCurrent ? { outline: '2px solid rgba(255,255,255,0.75)', outlineOffset: '3px' } : {}),
+      transition: isPlaying ? 'transform 35ms ease-out' : 'transform 120ms ease, background-color 60ms, box-shadow 60ms',
+      ...(isCurrent && !isPlaying ? { outline: '2px solid rgba(255,255,255,0.75)', outlineOffset: '3px' } : {}),
     }
   }
 
@@ -74,20 +61,22 @@ function buildStepCss(
       return {
         backgroundColor: isCurrent ? '#5a3830' : darkBg,
         border: 'none', boxShadow: 'none',
-        borderRadius: s.borderRadius,
+        borderRadius: '3px',
         transition: 'background-color 60ms',
       }
     }
     return {
-      background: `linear-gradient(to bottom, ${activeColor} 0, ${activeColor} 5px, #4a4848 5px)`,
-      border: 'none', boxShadow: 'none',
-      borderRadius: s.borderRadius,
-      transition: 'background 60ms',
-      ...(isCurrent ? { outline: `2px solid ${activeColor}aa`, outlineOffset: '1px' } : {}),
+      background: isPlaying
+        ? activeColor
+        : `linear-gradient(to bottom, ${activeColor} 0, ${activeColor} 5px, #4a4848 5px)`,
+      border: 'none', boxShadow: isPlaying ? `0 0 10px ${activeColor}99` : 'none',
+      borderRadius: '3px',
+      transition: 'background 60ms, box-shadow 60ms',
+      ...(isCurrent && !isPlaying ? { outline: `2px solid ${activeColor}aa`, outlineOffset: '1px' } : {}),
     }
   }
 
-  // TR-606: variable-size circles (no velocity — uniform red)
+  // TR-606: variable-size circles, scale punch on hit
   if (kitId === 'tr606') {
     if (!isActive) {
       return {
@@ -97,17 +86,18 @@ function buildStepCss(
         transition: 'transform 120ms ease, background-color 60ms',
       }
     }
+    const scale = isPlaying ? 1.08 : 0.88
     return {
       backgroundColor: activeColor,
       borderRadius: '50%', border: 'none',
-      boxShadow: `0 0 8px ${activeColor}99`,
-      transform: 'scale(0.88)',
-      transition: 'transform 120ms ease, background-color 60ms, box-shadow 60ms',
-      ...(isCurrent ? { outline: '2px solid rgba(255,255,255,0.75)', outlineOffset: '3px' } : {}),
+      boxShadow: `0 0 ${isPlaying ? 14 : 8}px ${activeColor}99`,
+      transform: `scale(${scale})`,
+      transition: isPlaying ? 'transform 35ms ease-out' : 'transform 120ms ease, background-color 60ms, box-shadow 60ms',
+      ...(isCurrent && !isPlaying ? { outline: '2px solid rgba(255,255,255,0.75)', outlineOffset: '3px' } : {}),
     }
   }
 
-  // TR-707: circles on olive grid — inactive show a subtle ring, active = filled black
+  // TR-707: circles on olive grid, scale punch on hit
   if (kitId === 'tr707') {
     if (!isActive) {
       return {
@@ -119,10 +109,12 @@ function buildStepCss(
       }
     }
     return {
-      backgroundColor: '#111',
-      borderRadius: '50%', border: 'none', boxShadow: 'none',
-      ...(isCurrent ? { outline: '2px solid rgba(192,72,8,0.9)', outlineOffset: '2px' } : {}),
-      transition: 'background-color 60ms',
+      backgroundColor: isPlaying ? activeColor : '#111',
+      borderRadius: '50%', border: 'none',
+      boxShadow: isPlaying ? `0 0 12px ${activeColor}99` : 'none',
+      transform: isPlaying ? 'scale(1.1)' : 'scale(1)',
+      transition: isPlaying ? 'transform 35ms ease-out' : 'transform 120ms ease, background-color 60ms',
+      ...(isCurrent && !isPlaying ? { outline: '2px solid rgba(192,72,8,0.9)', outlineOffset: '2px' } : {}),
     }
   }
 
@@ -134,12 +126,12 @@ function buildStepCss(
       : `inset 0 2px 3px rgba(0,0,0,0.45), inset 0 -1px 0 rgba(255,255,255,0.06)`,
     isCurrent ? `0 0 0 2px rgba(255,255,255,0.7)` : '',
   ].filter(Boolean).join(', ')
-
   return {
     backgroundColor: bg,
     border: `1px solid ${isActive ? activeColor : isBeat1 ? beatColor : inactiveColor}`,
-    boxShadow: shadow, borderRadius: s.borderRadius,
-    transition: 'background-color 60ms, box-shadow 60ms',
+    boxShadow: shadow, borderRadius: '3px',
+    transform: isPlaying ? 'scale(1.08)' : 'scale(1)',
+    transition: isPlaying ? 'transform 35ms ease-out' : 'background-color 60ms, box-shadow 60ms, transform 120ms ease',
   }
 }
 
@@ -179,9 +171,6 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
   const groups: number[][] = []
   for (let i = 0; i < maxStepCount; i += 4) groups.push([i, i + 1, i + 2, i + 3])
 
-  const shape = theme.buttonShape
-  const beatW = STEP_STYLE[shape]?.width ?? 30
-
   const stepNumColor = theme.textDim
   const stepNumBeatColor = theme.accent
 
@@ -209,7 +198,7 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                 key={stepIdx}
                 className="text-center font-mono tabular-nums select-none"
                 style={{
-                  width: `${beatW}px`,
+                  width: `${BTN_SIZE}px`,
                   fontSize: '9px',
                   color: stepIdx % 4 === 0 ? stepNumBeatColor : stepNumColor,
                   fontWeight: stepIdx % 4 === 0 ? 'bold' : 'normal',
@@ -229,9 +218,6 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
           const trackTheme = MACHINE_THEMES[effectiveKit]
           const machineDef = MACHINE_TRACKS[effectiveKit].find((m) => m.id === track.id)
           const displayLabel = machineDef?.label ?? track.label
-
-          const trackShape = trackTheme.buttonShape
-          const btnSize = STEP_STYLE[trackShape] ?? STEP_STYLE.square
 
           const is808label = effectiveKit === 'tr808' || effectiveKit === 'tr606' || effectiveKit === 'tr707' || effectiveKit === 'tr909'
 
@@ -268,7 +254,7 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                   boxShadow: track.muted ? 'none' : `0 0 4px ${trackTheme.accent}40`,
                   ...(is808label ? {
                     width: '20px',
-                    height: `${btnSize.height}px`,
+                    height: `${BTN_SIZE}px`,
                     writingMode: 'vertical-rl' as const,
                     transform: 'rotate(180deg)',
                     display: 'flex',
@@ -292,7 +278,7 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                       const velocity = step?.velocity ?? 0.85
 
                       const css = buildStepCss(
-                        effectiveKit, trackShape, isActive, isCurrent, isBeat1,
+                        effectiveKit, isActive, isCurrent, isBeat1,
                         velocity,
                         trackTheme.stepActive, trackTheme.stepInactive, trackTheme.stepBeat
                       )
@@ -303,8 +289,8 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                           onClick={() => toggleStep(track.id, stepIdx)}
                           className="relative select-none"
                           style={{
-                            width: `${btnSize.width}px`,
-                            height: `${btnSize.height}px`,
+                            width: `${BTN_SIZE}px`,
+                            height: `${BTN_SIZE}px`,
                             opacity: track.muted ? 0.25 : 1,
                             cursor: 'pointer',
                             ...css,

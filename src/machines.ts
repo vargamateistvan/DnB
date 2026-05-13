@@ -52,7 +52,7 @@ export const MACHINE_THEMES: Record<KitId, MachineTheme> = {
     accent: '#c04808', labelBg: '#1e1e1e', labelText: '#eee',
     stepActive: '#111', stepInactive: '#aeaa92', stepBeat: '#aeaa92',
     stepCurrent: '#c04808', text: '#1a1a1a', textDim: '#555',
-    buttonShape: 'circle', gridLines: true,
+    buttonShape: 'circle', gridLines: false,
     logoColor: '#444', font: 'sans-serif',
   },
   tb303: {
