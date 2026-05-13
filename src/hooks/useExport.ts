@@ -34,9 +34,9 @@ export function useExport(connectToRecorder: (recorder: Tone.Recorder) => void) 
     tracks.forEach((track) => {
       const midiTrack = midi.addTrack()
       midiTrack.name = track.label
-      const midiNote = noteNameToMidi(track.note)
       track.steps.forEach((step, i) => {
         if (!step.active) return
+        const midiNote = noteNameToMidi(step.note ?? track.note)
         midiTrack.addNote({
           midi: midiNote,
           time: i * stepSec,
