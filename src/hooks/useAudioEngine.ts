@@ -18,6 +18,13 @@ const TRIGGER_NOTES: Record<string, string> = {
 }
 
 function triggerSynth(synth: AnyToneSynth, trackId: string, time: number, velocity: number, stepNote?: string) {
+  if (synth instanceof Tone.Player) {
+    if (!synth.loaded) return
+    synth.volume.value = Tone.gainToDb(Math.max(0.0001, velocity))
+    synth.start(time)
+    return
+  }
+  if (synth instanceof Tone.Sampler && !synth.loaded) return
   const note = stepNote ?? TRIGGER_NOTES[trackId] ?? 'C2'
   if (isUnpitched(synth)) {
     synth.triggerAttackRelease('16n', time, velocity)

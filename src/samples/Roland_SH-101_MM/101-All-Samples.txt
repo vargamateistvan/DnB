@@ -1,0 +1,2 @@
+These are samples created by Martin Fay (martin.fay@umist.ac.uk)
+from the old Atmosfear synth site, uploaded by Martin Fay.

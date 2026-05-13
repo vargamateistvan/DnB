@@ -58,6 +58,10 @@ src/
 5. Wire up synths/samplers in `src/kits.ts`
 6. Add a controls section in `MachineControls.tsx`
 
+## Samples
+
+Roland drum machine samples sourced from the **[Roland Clan Library](https://www.rolandclan.com/library/)**.
+
 ## Tech stack
 
 | Library | Version | Purpose |

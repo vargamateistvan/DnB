@@ -1,5 +1,5 @@
 import { useSequencerStore } from '../store/sequencerStore'
-import { MACHINE_THEMES } from '../machines'
+import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import type { KitId } from '../types'
 
 // 2 octaves, B2 (top) → C1 (bottom)
