@@ -141,7 +141,7 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
       {/* ── Presets ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1 shrink-0">
         {([
-          { label: 'RND',   action: randomize,                 hover: '#a78bfa' },
+          { label: 'RND',   action: () => randomize(),         hover: '#a78bfa' },
           { label: 'AMEN',  action: () => loadPreset('amen'),  hover: '#60a5fa' },
           { label: 'CLR',   action: () => loadPreset('clear'), hover: '#f87171' },
         ] as const).map(({ label, action, hover }) => (

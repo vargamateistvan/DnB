@@ -36,7 +36,7 @@ function buildCustomSynth(synthType: SynthType): AnyToneSynth {
       })
     case 'metal':
       return new Tone.MetalSynth({
-        frequency: 600, envelope: { attack: 0.001, decay: 0.08, release: 0.01 },
+        envelope: { attack: 0.001, decay: 0.08, release: 0.01 },
         harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5,
       })
     case 'mono':

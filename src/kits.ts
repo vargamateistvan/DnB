@@ -49,11 +49,11 @@ function buildTR808(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.05 },
     }),
     hihat_closed: new Tone.MetalSynth({
-      frequency: 500, envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 32, resonance: 3800, octaves: 1.5,
     }),
     hihat_open: new Tone.MetalSynth({
-      frequency: 500, envelope: { attack: 0.001, decay: 0.55, release: 0.12 },
+      envelope: { attack: 0.001, decay: 0.55, release: 0.12 },
       harmonicity: 5.1, modulationIndex: 32, resonance: 3800, octaves: 1.5,
     }),
     clap: new Tone.NoiseSynth({
@@ -61,7 +61,7 @@ function buildTR808(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.005, decay: 0.12, sustain: 0, release: 0.06 },
     }),
     rim: new Tone.MetalSynth({
-      frequency: 900, envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 14, resonance: 5500, octaves: 1.5,
     }),
     tom_lo: new Tone.MembraneSynth({
@@ -73,7 +73,7 @@ function buildTR808(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.25 },
     }),
     cymbal: new Tone.MetalSynth({
-      frequency: 280, envelope: { attack: 0.001, decay: 1.4, release: 0.4 },
+      envelope: { attack: 0.001, decay: 1.4, release: 0.4 },
       harmonicity: 5.1, modulationIndex: 64, resonance: 4000, octaves: 1.5,
     }),
     bass: new Tone.Synth({
@@ -96,11 +96,11 @@ function buildTR909(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.08 },
     }),
     hihat_closed: new Tone.MetalSynth({
-      frequency: 700, envelope: { attack: 0.001, decay: 0.03, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.03, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 40, resonance: 5000, octaves: 1.5,
     }),
     hihat_open: new Tone.MetalSynth({
-      frequency: 700, envelope: { attack: 0.001, decay: 0.45, release: 0.1 },
+      envelope: { attack: 0.001, decay: 0.45, release: 0.1 },
       harmonicity: 5.1, modulationIndex: 40, resonance: 5000, octaves: 1.5,
     }),
     clap: new Tone.NoiseSynth({
@@ -108,7 +108,7 @@ function buildTR909(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.003, decay: 0.08, sustain: 0, release: 0.04 },
     }),
     rim: new Tone.MetalSynth({
-      frequency: 1000, envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 20, resonance: 6000, octaves: 1.5,
     }),
     tom_lo: new Tone.MembraneSynth({
@@ -120,7 +120,7 @@ function buildTR909(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.2 },
     }),
     cymbal: new Tone.MetalSynth({
-      frequency: 350, envelope: { attack: 0.001, decay: 1.0, release: 0.3 },
+      envelope: { attack: 0.001, decay: 1.0, release: 0.3 },
       harmonicity: 5.1, modulationIndex: 64, resonance: 4500, octaves: 1.5,
     }),
     bass: new Tone.Synth({
@@ -143,11 +143,11 @@ function buildTR606(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.14, sustain: 0, release: 0.04 },
     }),
     hihat_closed: new Tone.MetalSynth({
-      frequency: 900, envelope: { attack: 0.001, decay: 0.025, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.025, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 24, resonance: 6000, octaves: 1.2,
     }),
     hihat_open: new Tone.MetalSynth({
-      frequency: 900, envelope: { attack: 0.001, decay: 0.3, release: 0.08 },
+      envelope: { attack: 0.001, decay: 0.3, release: 0.08 },
       harmonicity: 5.1, modulationIndex: 24, resonance: 6000, octaves: 1.2,
     }),
     clap: new Tone.NoiseSynth({
@@ -155,7 +155,7 @@ function buildTR606(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.003, decay: 0.08, sustain: 0, release: 0.04 },
     }),
     rim: new Tone.MetalSynth({
-      frequency: 1100, envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 12, resonance: 7000, octaves: 1.2,
     }),
     tom_lo: new Tone.MembraneSynth({
@@ -167,7 +167,7 @@ function buildTR606(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.14 },
     }),
     cymbal: new Tone.MetalSynth({
-      frequency: 400, envelope: { attack: 0.001, decay: 0.7, release: 0.2 },
+      envelope: { attack: 0.001, decay: 0.7, release: 0.2 },
       harmonicity: 5.1, modulationIndex: 48, resonance: 5000, octaves: 1.2,
     }),
     bass: new Tone.Synth({
@@ -190,11 +190,11 @@ function buildTR707(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.05 },
     }),
     hihat_closed: new Tone.MetalSynth({
-      frequency: 800, envelope: { attack: 0.001, decay: 0.035, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.035, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 36, resonance: 5500, octaves: 1.4,
     }),
     hihat_open: new Tone.MetalSynth({
-      frequency: 800, envelope: { attack: 0.001, decay: 0.38, release: 0.09 },
+      envelope: { attack: 0.001, decay: 0.38, release: 0.09 },
       harmonicity: 5.1, modulationIndex: 36, resonance: 5500, octaves: 1.4,
     }),
     clap: new Tone.NoiseSynth({
@@ -202,7 +202,7 @@ function buildTR707(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.002, decay: 0.09, sustain: 0, release: 0.04 },
     }),
     rim: new Tone.MetalSynth({
-      frequency: 950, envelope: { attack: 0.001, decay: 0.045, release: 0.01 },
+      envelope: { attack: 0.001, decay: 0.045, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 18, resonance: 6500, octaves: 1.4,
     }),
     tom_lo: new Tone.MembraneSynth({
@@ -214,7 +214,7 @@ function buildTR707(): Record<TrackId, AnyToneSynth> {
       envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.16 },
     }),
     cymbal: new Tone.MetalSynth({
-      frequency: 320, envelope: { attack: 0.001, decay: 0.9, release: 0.25 },
+      envelope: { attack: 0.001, decay: 0.9, release: 0.25 },
       harmonicity: 5.1, modulationIndex: 56, resonance: 4800, octaves: 1.4,
     }),
     bass: new Tone.Synth({

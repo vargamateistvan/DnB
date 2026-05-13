@@ -46,7 +46,7 @@ export function useExport(connectToRecorder: (recorder: Tone.Recorder) => void) 
       })
     })
 
-    const blob = new Blob([midi.toArray()], { type: 'audio/midi' })
+    const blob = new Blob([Uint8Array.from(midi.toArray())], { type: 'audio/midi' })
     downloadBlob(blob, 'dnb-pattern.mid')
   }, [])
 
