@@ -3,14 +3,18 @@ import * as Tone from 'tone'
 import { useSequencerStore } from '../store/sequencerStore'
 import { buildKit } from '../kits'
 import type { AnyToneSynth } from '../kits'
-import type { TrackId, SynthType } from '../types'
+import type { SynthType } from '../types'
 
 function isUnpitched(s: AnyToneSynth): s is Tone.NoiseSynth | Tone.MetalSynth {
   return s instanceof Tone.NoiseSynth || s instanceof Tone.MetalSynth
 }
 
 const TRIGGER_NOTES: Record<string, string> = {
-  kick: 'C1', tom_lo: 'E1', tom_hi: 'A1', bass: 'C2',
+  tr808_kick: 'C1', tr808_tom_lo: 'E1', tr808_tom_hi: 'A1', tr808_cowbell: 'G#1',
+  tr909_kick: 'C1', tr909_tom_lo: 'E1', tr909_tom_hi: 'A1',
+  tr606_kick: 'C1', tr606_tom_lo: 'E1', tr606_tom_hi: 'A1',
+  tr707_kick: 'C1', tr707_tom_lo: 'E1', tr707_tom_hi: 'A1',
+  tb303_bass: 'C2', sh101_bass: 'C2',
 }
 
 function triggerSynth(synth: AnyToneSynth, trackId: string, time: number, velocity: number, stepNote?: string) {
@@ -55,9 +59,16 @@ function buildCustomSynth(synthType: SynthType): AnyToneSynth {
   }
 }
 
-const BASE_TRACK_IDS: TrackId[] = [
-  'kick', 'snare', 'hihat_closed', 'hihat_open', 'clap',
-  'rim', 'tom_lo', 'tom_hi', 'cymbal', 'bass',
+const BASE_TRACK_IDS: string[] = [
+  'tr808_kick','tr808_snare','tr808_hihat_closed','tr808_hihat_open','tr808_clap',
+  'tr808_rim','tr808_tom_lo','tr808_tom_hi','tr808_cymbal','tr808_cowbell',
+  'tr909_kick','tr909_snare','tr909_hihat_closed','tr909_hihat_open','tr909_clap',
+  'tr909_rim','tr909_tom_lo','tr909_tom_hi','tr909_cymbal',
+  'tr606_kick','tr606_snare','tr606_hihat_closed','tr606_hihat_open','tr606_clap',
+  'tr606_rim','tr606_tom_lo','tr606_tom_hi','tr606_cymbal',
+  'tr707_kick','tr707_snare','tr707_hihat_closed','tr707_hihat_open','tr707_clap',
+  'tr707_rim','tr707_tom_lo','tr707_tom_hi','tr707_cymbal',
+  'tb303_bass','sh101_bass',
 ]
 
 export function useAudioEngine() {
@@ -70,13 +81,12 @@ export function useAudioEngine() {
   const tracks = useSequencerStore((s) => s.tracks)
   const bpm = useSequencerStore((s) => s.bpm)
   const swing = useSequencerStore((s) => s.swing)
-  const stepCount = useSequencerStore((s) => s.stepCount)
-  const kitId = useSequencerStore((s) => s.kit)
+  const maxStepCount = Math.max(...tracks.map((t) => t.steps.length), 16)
   const machineParams = useSequencerStore((s) => s.machineParams)
   const setCurrentStep = useSequencerStore((s) => s.setCurrentStep)
   const setPlaying = useSequencerStore((s) => s.setPlaying)
 
-  // ── Init: master chain + channels for all base tracks ────────────────────
+  // ── Init: master chain + all per-kit synths ──────────────────────────────
   useEffect(() => {
     const master = new Tone.Compressor(-6, 4)
     const tap = new Tone.Gain(1)
@@ -87,41 +97,28 @@ export function useAudioEngine() {
     masterRef.current = master
     tapRef.current = tap
 
-    BASE_TRACK_IDS.forEach((id) => {
-      const ch = new Tone.Channel({ volume: 0 }).connect(master)
-      channelsRef.current[id] = ch
+    // Build every kit's synths once — each machine has its own fixed set
+    const allKits: string[] = ['tr808','tr909','tr606','tr707','tb303','sh101']
+    allKits.forEach((kit) => {
+      const synths = buildKit(kit as Parameters<typeof buildKit>[0])
+      Object.entries(synths).forEach(([id, synth]) => {
+        const ch = new Tone.Channel({ volume: 0 }).connect(master)
+        channelsRef.current[id] = ch
+        synthsRef.current[id] = synth
+        synth.connect(ch)
+      })
     })
 
     return () => {
       master.dispose()
       tap.dispose()
       reverb.dispose()
+      Object.values(synthsRef.current).forEach((s) => { s.disconnect(); s.dispose() })
       Object.values(channelsRef.current).forEach((ch) => ch.dispose())
+      synthsRef.current = {}
       channelsRef.current = {}
     }
   }, [])
-
-  // ── Kit swap: rebuild base 10 synths ─────────────────────────────────────
-  useEffect(() => {
-    BASE_TRACK_IDS.forEach((id) => {
-      synthsRef.current[id]?.disconnect()
-      synthsRef.current[id]?.dispose()
-    })
-
-    const kitSynths = buildKit(kitId)
-    BASE_TRACK_IDS.forEach((id) => {
-      synthsRef.current[id] = kitSynths[id]
-      const ch = channelsRef.current[id]
-      if (ch) kitSynths[id].connect(ch)
-    })
-
-    return () => {
-      BASE_TRACK_IDS.forEach((id) => {
-        synthsRef.current[id]?.disconnect()
-        synthsRef.current[id]?.dispose()
-      })
-    }
-  }, [kitId])
 
   // ── Dynamic track sync: add/remove custom track synths ───────────────────
   useEffect(() => {
@@ -143,7 +140,7 @@ export function useAudioEngine() {
     // Destroy synth + channel for removed tracks (skip base tracks)
     audioIds.forEach((id) => {
       if (storeIds.has(id)) return
-      if (BASE_TRACK_IDS.includes(id as TrackId)) return
+      if (BASE_TRACK_IDS.includes(id)) return
       synthsRef.current[id]?.disconnect()
       synthsRef.current[id]?.dispose()
       delete synthsRef.current[id]
@@ -152,29 +149,29 @@ export function useAudioEngine() {
     })
   }, [tracks])
 
-  // ── Machine params → bass MonoSynth (TB-303 / SH-101) ────────────────────
+  // ── Machine params → TB-303 / SH-101 MonoSynths ──────────────────────────
   useEffect(() => {
-    const synth = synthsRef.current['bass']
-    if (!(synth instanceof Tone.MonoSynth)) return
-
-    if (kitId === 'tb303') {
+    const tb303 = synthsRef.current['tb303_bass']
+    if (tb303 instanceof Tone.MonoSynth) {
       const p = machineParams.tb303
-      synth.filter.frequency.value = 100 + p.cutoff * 7900
-      synth.filter.Q.value = 1 + p.resonance * 19
-      synth.filterEnvelope.octaves = p.envMod * 5
-      synth.filterEnvelope.decay = 0.05 + p.decay * 1.95
+      tb303.filter.frequency.value = 100 + p.cutoff * 7900
+      tb303.filter.Q.value = 1 + p.resonance * 19
+      tb303.filterEnvelope.octaves = p.envMod * 5
+      tb303.filterEnvelope.decay = 0.05 + p.decay * 1.95
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      synth.oscillator.type = p.waveform as any
-    } else if (kitId === 'sh101') {
-      const p = machineParams.sh101
-      synth.filter.frequency.value = 80 + p.vcfFreq * 7920
-      synth.filter.Q.value = 1 + p.vcfRes * 11
-      synth.filterEnvelope.octaves = p.vcfEnv * 3
-      synth.portamento = p.portamento * 0.5
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      synth.oscillator.type = p.waveform as any
+      tb303.oscillator.type = p.waveform as any
     }
-  }, [kitId, machineParams])
+    const sh101 = synthsRef.current['sh101_bass']
+    if (sh101 instanceof Tone.MonoSynth) {
+      const p = machineParams.sh101
+      sh101.filter.frequency.value = 80 + p.vcfFreq * 7920
+      sh101.filter.Q.value = 1 + p.vcfRes * 11
+      sh101.filterEnvelope.octaves = p.vcfEnv * 3
+      sh101.portamento = p.portamento * 0.5
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sh101.oscillator.type = p.waveform as any
+    }
+  }, [machineParams])
 
   // ── BPM / Swing ───────────────────────────────────────────────────────────
   useEffect(() => { Tone.getTransport().bpm.value = bpm }, [bpm])
@@ -196,7 +193,7 @@ export function useAudioEngine() {
   // ── Sequence ──────────────────────────────────────────────────────────────
   useEffect(() => {
     seqRef.current?.dispose()
-    const steps = Array.from({ length: stepCount }, (_, i) => i)
+    const steps = Array.from({ length: maxStepCount }, (_, i) => i)
 
     seqRef.current = new Tone.Sequence(
       (time, step) => {
@@ -204,7 +201,7 @@ export function useAudioEngine() {
         const state = useSequencerStore.getState()
         state.tracks.forEach((track) => {
           if (track.muted) return
-          const s = track.steps[step as number]
+          const s = track.steps[(step as number) % track.steps.length]
           if (!s?.active) return
           const synth = synthsRef.current[track.id]
           if (!synth) return
@@ -216,7 +213,7 @@ export function useAudioEngine() {
     )
 
     if (Tone.getTransport().state === 'started') seqRef.current.start(0)
-  }, [stepCount, setCurrentStep])
+  }, [maxStepCount, setCurrentStep])
 
   const play = useCallback(async () => {
     await Tone.start()

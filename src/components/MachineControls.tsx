@@ -72,7 +72,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
   // ── SH-101 — vertical faders matching real hardware layout ──────────────────
   if (kit === 'sh101') {
     const p = params.sh101
-    const bassTrack = tracks.find((t) => t.id === 'bass')
+    const bassTrack = tracks.find((t) => t.id === 'sh101_bass')
 
     function vfader(value: number, label: string, onChange: (v: number) => void) {
       return (
@@ -108,7 +108,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
         style={{ background: theme.panel, borderColor: theme.border }}
       >
         <div className="flex flex-col gap-1 self-center">
-          {bassTrack && knob(bassTrack.volume, 'LEVEL', 36, (v) => setVolume('bass', v))}
+          {bassTrack && knob(bassTrack.volume, 'LEVEL', 36, (v) => setVolume('sh101_bass', v))}
         </div>
 
         {divider()}
@@ -146,7 +146,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
   // ── TB-303 ──────────────────────────────────────────────────────────────────
   if (kit === 'tb303') {
     const p = params.tb303
-    const bassTrack = tracks.find((t) => t.id === 'bass')
+    const bassTrack = tracks.find((t) => t.id === 'tb303_bass')
     const panelBg = '#111'
     const panelBorder = '#2a2a2a'
     const panelLabel = '#888'
@@ -175,7 +175,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
               <KnobControl
                 value={bassTrack.volume} label="LEVEL" color={panelAccent}
                 trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel}
-                size={36} onChange={(v) => setVolume('bass', v)}
+                size={36} onChange={(v) => setVolume('tb303_bass', v)}
               />
             )}
           </div>

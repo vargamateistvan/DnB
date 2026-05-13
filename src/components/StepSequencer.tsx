@@ -63,7 +63,6 @@ interface Props {
 export function StepSequencer({ onPadTrigger }: Props) {
   const tracks = useSequencerStore((s) => s.tracks)
   const currentStep = useSequencerStore((s) => s.currentStep)
-  const stepCount = useSequencerStore((s) => s.stepCount)
   const isPlaying = useSequencerStore((s) => s.isPlaying)
   const toggleStep = useSequencerStore((s) => s.toggleStep)
   const setStepNote = useSequencerStore((s) => s.setStepNote)
@@ -71,6 +70,7 @@ export function StepSequencer({ onPadTrigger }: Props) {
   const setVolume = useSequencerStore((s) => s.setVolume)
   const addTrack = useSequencerStore((s) => s.addTrack)
   const removeTrack = useSequencerStore((s) => s.removeTrack)
+  const setTrackStepCount = useSequencerStore((s) => s.setTrackStepCount)
   const kit = useSequencerStore((s) => s.kit)
   const trackKits = useSequencerStore((s) => s.trackKits)
 
@@ -80,8 +80,9 @@ export function StepSequencer({ onPadTrigger }: Props) {
   const machineTids = new Set<string>(machineTrackDefs.map((t) => t.id))
   const visibleTracks = tracks.filter((t) => machineTids.has(t.id) || t.custom)
 
+  const maxStepCount = Math.max(...visibleTracks.map((t) => t.steps.length), 16)
   const groups: number[][] = []
-  for (let i = 0; i < stepCount; i += 4) groups.push([i, i+1, i+2, i+3])
+  for (let i = 0; i < maxStepCount; i += 4) groups.push([i, i+1, i+2, i+3])
 
   return (
     <div className="flex-1 overflow-auto px-4 py-2 relative" style={{ background: globalTheme.bg }}>
@@ -112,6 +113,10 @@ export function StepSequencer({ onPadTrigger }: Props) {
           const eh = hex.length === 3 ? hex.split('').map((c) => c + c).join('') : hex
           const isActiveLightBg = (parseInt(eh.slice(0,2),16)*0.299 + parseInt(eh.slice(2,4),16)*0.587 + parseInt(eh.slice(4,6),16)*0.114) > 128
           const noteTextColor = isActiveLightBg ? 'rgba(0,0,0,0.88)' : 'rgba(255,255,255,0.95)'
+
+          const trackStepCount = track.steps.length
+          const trackGroups: number[][] = []
+          for (let i = 0; i < trackStepCount; i += 4) trackGroups.push([i, i+1, i+2, i+3])
 
           return (
             <div key={track.id} className="group flex items-center gap-1.5">
@@ -145,12 +150,12 @@ export function StepSequencer({ onPadTrigger }: Props) {
 
               {/* Steps */}
               <div className="flex gap-1.5 flex-1">
-                {groups.map((group, gi) => (
+                {trackGroups.map((group, gi) => (
                   <div key={gi} className="flex gap-0.5">
                     {group.map((stepIdx) => {
                       const step = track.steps[stepIdx]
                       const isActive = step?.active ?? false
-                      const isCurrent = isPlaying && currentStep === stepIdx
+                      const isCurrent = isPlaying && (currentStep % trackStepCount) === stepIdx
                       const isBeat1 = stepIdx % 4 === 0
 
                       const css = buildStepCss(
@@ -246,6 +251,23 @@ export function StepSequencer({ onPadTrigger }: Props) {
                 />
               </div>
 
+              {/* Per-track step count */}
+              <div className="shrink-0 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                {([16, 32, 64] as const).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setTrackStepCount(track.id, n)}
+                    className="font-mono text-[9px] font-bold w-5 h-5"
+                    style={{
+                      background: trackStepCount === n ? theme.accent : 'transparent',
+                      border: `1px solid ${trackStepCount === n ? theme.accent : theme.border}`,
+                      borderRadius: '2px',
+                      color: trackStepCount === n ? '#000' : theme.textDim,
+                    }}
+                  >{n}</button>
+                ))}
+              </div>
+
               {/* Add track below */}
               <button
                 onClick={() => addTrack(track.id)}
@@ -263,7 +285,7 @@ export function StepSequencer({ onPadTrigger }: Props) {
         const beatW = STEP_STYLE[globalTheme.buttonShape]?.width ?? 30
         return (
           <div className="flex gap-1.5 mt-1.5 pl-[82px]">
-            {groups.map((group, gi) => (
+            {groups.map((group, gi) => (  // groups already uses maxStepCount
               <div key={gi} className="flex gap-0.5">
                 {group.map((stepIdx) => (
                   <div

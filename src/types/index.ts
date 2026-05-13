@@ -1,14 +1,4 @@
-export type TrackId =
-  | 'kick'
-  | 'snare'
-  | 'hihat_closed'
-  | 'hihat_open'
-  | 'clap'
-  | 'rim'
-  | 'tom_lo'
-  | 'tom_hi'
-  | 'cymbal'
-  | 'bass'
+export type TrackId = string
 
 export type KitId = 'tr808' | 'tr909' | 'tr606' | 'tr707' | 'tb303' | 'sh101'
 

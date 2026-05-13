@@ -28,17 +28,18 @@ interface Props {
 export function PianoRollGrid({ kitId }: Props) {
   const tracks      = useSequencerStore((s) => s.tracks)
   const currentStep = useSequencerStore((s) => s.currentStep)
-  const stepCount   = useSequencerStore((s) => s.stepCount)
   const isPlaying   = useSequencerStore((s) => s.isPlaying)
   const toggleStep  = useSequencerStore((s) => s.toggleStep)
   const setStepNote = useSequencerStore((s) => s.setStepNote)
 
   const theme     = MACHINE_THEMES[kitId]
-  const bassTrack = tracks.find((t) => t.id === 'bass')
+  const bassTrackId = MACHINE_TRACKS[kitId][0].id
+  const bassTrack = tracks.find((t) => t.id === bassTrackId)
   const isTb303   = kitId === 'tb303'
 
+  const trackStepCount = bassTrack?.steps.length ?? 16
   const groups: number[][] = []
-  for (let i = 0; i < stepCount; i += 4) groups.push([i, i + 1, i + 2, i + 3])
+  for (let i = 0; i < trackStepCount; i += 4) groups.push([i, i + 1, i + 2, i + 3])
 
   if (!bassTrack) return null
 
@@ -104,7 +105,7 @@ export function PianoRollGrid({ kitId }: Props) {
                       const stepNote  = step?.note ?? 'C2'
                       const isActive  = (step?.active ?? false) && stepNote === rowNote
                       const isOtherNote = (step?.active ?? false) && stepNote !== rowNote
-                      const isCurrent = isPlaying && currentStep === stepIdx
+                      const isCurrent = isPlaying && (currentStep % trackStepCount) === stepIdx
                       const isBeat1   = stepIdx % 8 === 0
 
                       // ── TB-303: variable-size triangles ──────────────────
@@ -131,10 +132,10 @@ export function PianoRollGrid({ kitId }: Props) {
                               const active = step?.active ?? false
                               const note   = step?.note ?? 'C2'
                               if (!active) {
-                                toggleStep('bass', stepIdx)
-                                setStepNote('bass', stepIdx, rowNote)
+                                toggleStep(bassTrackId, stepIdx)
+                                setStepNote(bassTrackId, stepIdx, rowNote)
                               } else if (note === rowNote) {
-                                toggleStep('bass', stepIdx)
+                                toggleStep(bassTrackId, stepIdx)
                               } else {
                                 setStepNote('bass', stepIdx, rowNote)
                               }
@@ -185,10 +186,10 @@ export function PianoRollGrid({ kitId }: Props) {
                             const active = step?.active ?? false
                             const note   = step?.note ?? 'C2'
                             if (!active) {
-                              toggleStep('bass', stepIdx)
+                              toggleStep(bassTrackId, stepIdx)
                               setStepNote('bass', stepIdx, rowNote)
                             } else if (note === rowNote) {
-                              toggleStep('bass', stepIdx)
+                              toggleStep(bassTrackId, stepIdx)
                             } else {
                               setStepNote('bass', stepIdx, rowNote)
                             }

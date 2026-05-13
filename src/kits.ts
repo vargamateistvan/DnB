@@ -1,5 +1,5 @@
 import * as Tone from 'tone'
-import type { KitId, TrackId } from './types'
+import type { KitId } from './types'
 
 export type AnyToneSynth =
   | Tone.MembraneSynth
@@ -25,7 +25,7 @@ export const KIT_LIST: KitMeta[] = [
   { id: 'tr909', label: 'TR-909',  year: '1983', color: '#ff3575', description: 'Punchy house & techno' },
 ]
 
-export function buildKit(id: KitId): Record<TrackId, AnyToneSynth> {
+export function buildKit(id: KitId): Record<string, AnyToneSynth> {
   switch (id) {
     case 'tr808': return buildTR808()
     case 'tr909': return buildTR909()
@@ -38,200 +38,185 @@ export function buildKit(id: KitId): Record<TrackId, AnyToneSynth> {
 
 // ─── TR-808 (1980) ──────────────────────────────────────────────────────────
 // Deep sine kick, thin noise snare, metallic hats — the DnB foundation
-function buildTR808(): Record<TrackId, AnyToneSynth> {
+function buildTR808(): Record<string, AnyToneSynth> {
   return {
-    kick: new Tone.MembraneSynth({
+    tr808_kick: new Tone.MembraneSynth({
       pitchDecay: 0.09, octaves: 9,
       envelope: { attack: 0.001, decay: 0.55, sustain: 0, release: 0.5 },
     }),
-    snare: new Tone.NoiseSynth({
+    tr808_snare: new Tone.NoiseSynth({
       noise: { type: 'white' },
       envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.05 },
     }),
-    hihat_closed: new Tone.MetalSynth({
+    tr808_hihat_closed: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 32, resonance: 3800, octaves: 1.5,
     }),
-    hihat_open: new Tone.MetalSynth({
+    tr808_hihat_open: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.55, release: 0.12 },
       harmonicity: 5.1, modulationIndex: 32, resonance: 3800, octaves: 1.5,
     }),
-    clap: new Tone.NoiseSynth({
+    tr808_clap: new Tone.NoiseSynth({
       noise: { type: 'pink' },
       envelope: { attack: 0.005, decay: 0.12, sustain: 0, release: 0.06 },
     }),
-    rim: new Tone.MetalSynth({
+    tr808_rim: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 14, resonance: 5500, octaves: 1.5,
     }),
-    tom_lo: new Tone.MembraneSynth({
+    tr808_tom_lo: new Tone.MembraneSynth({
       pitchDecay: 0.1, octaves: 4,
       envelope: { attack: 0.001, decay: 0.38, sustain: 0, release: 0.35 },
     }),
-    tom_hi: new Tone.MembraneSynth({
+    tr808_tom_hi: new Tone.MembraneSynth({
       pitchDecay: 0.07, octaves: 4,
       envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.25 },
     }),
-    cymbal: new Tone.MetalSynth({
+    tr808_cymbal: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 1.4, release: 0.4 },
       harmonicity: 5.1, modulationIndex: 64, resonance: 4000, octaves: 1.5,
     }),
-    bass: new Tone.Synth({
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.001, decay: 0.7, sustain: 0.1, release: 0.4 },
+    tr808_cowbell: new Tone.MetalSynth({
+      envelope: { attack: 0.001, decay: 0.3, release: 0.1 },
+      harmonicity: 5.1, modulationIndex: 16, resonance: 800, octaves: 0.5,
     }),
   }
 }
 
 // ─── TR-909 (1983) ──────────────────────────────────────────────────────────
 // Punchy kick with analogue + digital mix, crisp hats, deep sub
-function buildTR909(): Record<TrackId, AnyToneSynth> {
+function buildTR909(): Record<string, AnyToneSynth> {
   return {
-    kick: new Tone.MembraneSynth({
+    tr909_kick: new Tone.MembraneSynth({
       pitchDecay: 0.06, octaves: 8,
       envelope: { attack: 0.001, decay: 0.38, sustain: 0.05, release: 0.3 },
     }),
-    snare: new Tone.NoiseSynth({
+    tr909_snare: new Tone.NoiseSynth({
       noise: { type: 'white' },
       envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.08 },
     }),
-    hihat_closed: new Tone.MetalSynth({
+    tr909_hihat_closed: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.03, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 40, resonance: 5000, octaves: 1.5,
     }),
-    hihat_open: new Tone.MetalSynth({
+    tr909_hihat_open: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.45, release: 0.1 },
       harmonicity: 5.1, modulationIndex: 40, resonance: 5000, octaves: 1.5,
     }),
-    clap: new Tone.NoiseSynth({
+    tr909_clap: new Tone.NoiseSynth({
       noise: { type: 'white' },
       envelope: { attack: 0.003, decay: 0.08, sustain: 0, release: 0.04 },
     }),
-    rim: new Tone.MetalSynth({
+    tr909_rim: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 20, resonance: 6000, octaves: 1.5,
     }),
-    tom_lo: new Tone.MembraneSynth({
+    tr909_tom_lo: new Tone.MembraneSynth({
       pitchDecay: 0.08, octaves: 5,
       envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.3 },
     }),
-    tom_hi: new Tone.MembraneSynth({
+    tr909_tom_hi: new Tone.MembraneSynth({
       pitchDecay: 0.06, octaves: 5,
       envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.2 },
     }),
-    cymbal: new Tone.MetalSynth({
+    tr909_cymbal: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 1.0, release: 0.3 },
       harmonicity: 5.1, modulationIndex: 64, resonance: 4500, octaves: 1.5,
-    }),
-    bass: new Tone.Synth({
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.001, decay: 0.5, sustain: 0.15, release: 0.35 },
     }),
   }
 }
 
 // ─── TR-606 (1981) ──────────────────────────────────────────────────────────
 // Thin, bright, cheap-but-cool companion to the TB-303
-function buildTR606(): Record<TrackId, AnyToneSynth> {
+function buildTR606(): Record<string, AnyToneSynth> {
   return {
-    kick: new Tone.MembraneSynth({
+    tr606_kick: new Tone.MembraneSynth({
       pitchDecay: 0.04, octaves: 5,
       envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.18 },
     }),
-    snare: new Tone.NoiseSynth({
+    tr606_snare: new Tone.NoiseSynth({
       noise: { type: 'white' },
       envelope: { attack: 0.001, decay: 0.14, sustain: 0, release: 0.04 },
     }),
-    hihat_closed: new Tone.MetalSynth({
+    tr606_hihat_closed: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.025, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 24, resonance: 6000, octaves: 1.2,
     }),
-    hihat_open: new Tone.MetalSynth({
+    tr606_hihat_open: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.3, release: 0.08 },
       harmonicity: 5.1, modulationIndex: 24, resonance: 6000, octaves: 1.2,
     }),
-    clap: new Tone.NoiseSynth({
+    tr606_clap: new Tone.NoiseSynth({
       noise: { type: 'pink' },
       envelope: { attack: 0.003, decay: 0.08, sustain: 0, release: 0.04 },
     }),
-    rim: new Tone.MetalSynth({
+    tr606_rim: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.04, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 12, resonance: 7000, octaves: 1.2,
     }),
-    tom_lo: new Tone.MembraneSynth({
+    tr606_tom_lo: new Tone.MembraneSynth({
       pitchDecay: 0.05, octaves: 3,
       envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.18 },
     }),
-    tom_hi: new Tone.MembraneSynth({
+    tr606_tom_hi: new Tone.MembraneSynth({
       pitchDecay: 0.04, octaves: 3,
       envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.14 },
     }),
-    cymbal: new Tone.MetalSynth({
+    tr606_cymbal: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.7, release: 0.2 },
       harmonicity: 5.1, modulationIndex: 48, resonance: 5000, octaves: 1.2,
-    }),
-    bass: new Tone.Synth({
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.001, decay: 0.35, sustain: 0.05, release: 0.2 },
     }),
   }
 }
 
 // ─── TR-707 (1984) ──────────────────────────────────────────────────────────
 // Digital precision — tighter, cleaner, more defined transients
-function buildTR707(): Record<TrackId, AnyToneSynth> {
+function buildTR707(): Record<string, AnyToneSynth> {
   return {
-    kick: new Tone.MembraneSynth({
+    tr707_kick: new Tone.MembraneSynth({
       pitchDecay: 0.03, octaves: 7,
       envelope: { attack: 0.001, decay: 0.28, sustain: 0, release: 0.22 },
     }),
-    snare: new Tone.NoiseSynth({
+    tr707_snare: new Tone.NoiseSynth({
       noise: { type: 'white' },
       envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.05 },
     }),
-    hihat_closed: new Tone.MetalSynth({
+    tr707_hihat_closed: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.035, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 36, resonance: 5500, octaves: 1.4,
     }),
-    hihat_open: new Tone.MetalSynth({
+    tr707_hihat_open: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.38, release: 0.09 },
       harmonicity: 5.1, modulationIndex: 36, resonance: 5500, octaves: 1.4,
     }),
-    clap: new Tone.NoiseSynth({
+    tr707_clap: new Tone.NoiseSynth({
       noise: { type: 'white' },
       envelope: { attack: 0.002, decay: 0.09, sustain: 0, release: 0.04 },
     }),
-    rim: new Tone.MetalSynth({
+    tr707_rim: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.045, release: 0.01 },
       harmonicity: 5.1, modulationIndex: 18, resonance: 6500, octaves: 1.4,
     }),
-    tom_lo: new Tone.MembraneSynth({
+    tr707_tom_lo: new Tone.MembraneSynth({
       pitchDecay: 0.06, octaves: 4,
       envelope: { attack: 0.001, decay: 0.26, sustain: 0, release: 0.22 },
     }),
-    tom_hi: new Tone.MembraneSynth({
+    tr707_tom_hi: new Tone.MembraneSynth({
       pitchDecay: 0.05, octaves: 4,
       envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.16 },
     }),
-    cymbal: new Tone.MetalSynth({
+    tr707_cymbal: new Tone.MetalSynth({
       envelope: { attack: 0.001, decay: 0.9, release: 0.25 },
       harmonicity: 5.1, modulationIndex: 56, resonance: 4800, octaves: 1.4,
-    }),
-    bass: new Tone.Synth({
-      oscillator: { type: 'square' },
-      envelope: { attack: 0.001, decay: 0.4, sustain: 0.08, release: 0.25 },
     }),
   }
 }
 
 // ─── TB-303 (1981) ──────────────────────────────────────────────────────────
 // Acid bass synth with resonant filter sweep — drum section from TR-606
-function buildTB303(): Record<TrackId, AnyToneSynth> {
-  const drums = buildTR606()
+function buildTB303(): Record<string, AnyToneSynth> {
   return {
-    ...drums,
-    // Replace bass with the iconic acid bass
-    bass: new Tone.MonoSynth({
+    tb303_bass: new Tone.MonoSynth({
       oscillator: { type: 'sawtooth' },
       filter: { type: 'lowpass', rolloff: -24, Q: 8 },
       envelope: { attack: 0.001, decay: 0.35, sustain: 0.05, release: 0.2 },
@@ -250,10 +235,10 @@ function buildTB303(): Record<TrackId, AnyToneSynth> {
 
 // ─── Single-track builder ────────────────────────────────────────────────────
 // Builds a full kit, keeps only the requested track's synth, disposes the rest.
-export function buildSingleSynth(kitId: KitId, trackId: TrackId): AnyToneSynth {
+export function buildSingleSynth(kitId: KitId, trackId: string): AnyToneSynth {
   const all = buildKit(kitId)
   const target = all[trackId]
-  ;(Object.keys(all) as TrackId[]).forEach((id) => {
+  Object.keys(all).forEach((id) => {
     if (id !== trackId) all[id].dispose()
   })
   return target
@@ -272,11 +257,9 @@ export const KIT_SHORT: Record<KitId, string> = {
 
 // ─── SH-101 (1982) ──────────────────────────────────────────────────────────
 // Bright monophonic synth bass — pulse wave with warmer filter sweep
-function buildSH101(): Record<TrackId, AnyToneSynth> {
-  const drums = buildTR707()
+function buildSH101(): Record<string, AnyToneSynth> {
   return {
-    ...drums,
-    bass: new Tone.MonoSynth({
+    sh101_bass: new Tone.MonoSynth({
       oscillator: { type: 'pulse' },
       filter: { type: 'lowpass', rolloff: -24, Q: 3 },
       envelope: { attack: 0.005, decay: 0.3, sustain: 0.25, release: 0.3 },

@@ -107,22 +107,22 @@ function buildStepCss(
     }
   }
 
-  // TR-707: variable-size black circles on olive grid
+  // TR-707: circles on olive grid — inactive show a subtle ring, active = filled black
   if (kitId === 'tr707') {
     if (!isActive) {
       return {
-        backgroundColor: isCurrent ? 'rgba(192,72,8,0.25)' : 'transparent',
-        borderRadius: '50%', border: 'none', boxShadow: 'none',
-        transform: isCurrent ? 'scale(0.30)' : 'scale(0.15)',
-        transition: 'transform 120ms ease, background-color 60ms',
+        backgroundColor: isCurrent ? 'rgba(192,72,8,0.18)' : 'transparent',
+        borderRadius: '50%',
+        border: `2px solid ${isCurrent ? 'rgba(192,72,8,0.7)' : 'rgba(0,0,0,0.28)'}`,
+        boxShadow: 'none',
+        transition: 'background-color 60ms, border-color 60ms',
       }
     }
     return {
       backgroundColor: '#111',
       borderRadius: '50%', border: 'none', boxShadow: 'none',
-      transform: 'scale(0.84)',
-      transition: 'transform 120ms ease, background-color 60ms',
       ...(isCurrent ? { outline: '2px solid rgba(192,72,8,0.9)', outlineOffset: '2px' } : {}),
+      transition: 'background-color 60ms',
     }
   }
 
@@ -160,24 +160,24 @@ interface Props {
 export function DrumGrid({ kitId, onPadTrigger }: Props) {
   const tracks = useSequencerStore((s) => s.tracks)
   const currentStep = useSequencerStore((s) => s.currentStep)
-  const stepCount = useSequencerStore((s) => s.stepCount)
   const isPlaying = useSequencerStore((s) => s.isPlaying)
   const toggleStep = useSequencerStore((s) => s.toggleStep)
   const toggleMute = useSequencerStore((s) => s.toggleMute)
   const setVolume = useSequencerStore((s) => s.setVolume)
   const addTrack = useSequencerStore((s) => s.addTrack)
   const removeTrack = useSequencerStore((s) => s.removeTrack)
+  const setTrackStepCount = useSequencerStore((s) => s.setTrackStepCount)
   const trackKits = useSequencerStore((s) => s.trackKits)
 
   const theme = MACHINE_THEMES[kitId]
   const machineTrackDefs = MACHINE_TRACKS[kitId]
 
   const machineTids = new Set<string>(machineTrackDefs.map((t) => t.id))
-  // Show all tracks belonging to this machine (bass row in drum machines is e.g. cowbell/CB)
   const visibleTracks = tracks.filter((t) => machineTids.has(t.id) || t.custom)
 
+  const maxStepCount = Math.max(...visibleTracks.map((t) => t.steps.length), 16)
   const groups: number[][] = []
-  for (let i = 0; i < stepCount; i += 4) groups.push([i, i + 1, i + 2, i + 3])
+  for (let i = 0; i < maxStepCount; i += 4) groups.push([i, i + 1, i + 2, i + 3])
 
   const shape = theme.buttonShape
   const beatW = STEP_STYLE[shape]?.width ?? 30
@@ -235,6 +235,10 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
 
           const is808label = effectiveKit === 'tr808' || effectiveKit === 'tr606' || effectiveKit === 'tr707' || effectiveKit === 'tr909'
 
+          const trackStepCount = track.steps.length
+          const trackGroups: number[][] = []
+          for (let i = 0; i < trackStepCount; i += 4) trackGroups.push([i, i + 1, i + 2, i + 3])
+
           return (
             <div key={track.id} className="group flex items-center gap-1.5">
               {/* Remove button */}
@@ -278,12 +282,12 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
 
               {/* Steps */}
               <div className="flex gap-1.5 flex-1">
-                {groups.map((group, gi) => (
+                {trackGroups.map((group, gi) => (
                   <div key={gi} className="flex gap-0.5">
                     {group.map((stepIdx) => {
                       const step = track.steps[stepIdx]
                       const isActive = step?.active ?? false
-                      const isCurrent = isPlaying && currentStep === stepIdx
+                      const isCurrent = isPlaying && (currentStep % trackStepCount) === stepIdx
                       const isBeat1 = stepIdx % 4 === 0
                       const velocity = step?.velocity ?? 0.85
 
@@ -319,6 +323,23 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                   trackColor={trackTheme.border} bodyColor={trackTheme.panel} labelColor={trackTheme.textDim}
                   onChange={(v) => setVolume(track.id, v)}
                 />
+              </div>
+
+              {/* Per-track step count */}
+              <div className="shrink-0 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                {([16, 32, 64] as const).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setTrackStepCount(track.id, n)}
+                    className="font-mono text-[9px] font-bold w-5 h-5"
+                    style={{
+                      background: trackStepCount === n ? trackTheme.accent : 'transparent',
+                      border: `1px solid ${trackStepCount === n ? trackTheme.accent : trackTheme.border}`,
+                      borderRadius: '2px',
+                      color: trackStepCount === n ? '#000' : trackTheme.textDim,
+                    }}
+                  >{n}</button>
+                ))}
               </div>
 
               {/* Add track below */}

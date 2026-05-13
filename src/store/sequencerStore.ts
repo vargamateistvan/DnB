@@ -10,18 +10,16 @@ const makeSteps = (count: StepCount): Step[] =>
 // ── Pentatonic notes pool for bass randomisation ───────────────────────────────
 const BASS_NOTES = ['C1','Eb1','F1','G1','Bb1','C2','Eb2','F2','G2','Bb2','C3']
 
-// ── Drum density per track (probability a step fires) ─────────────────────────
-const RANDOM_DENSITY: Partial<Record<string, number>> = {
-  kick:         0.13,
-  snare:        0.13,
-  hihat_closed: 0.30,
-  hihat_open:   0.06,
-  cymbal:       0.04,
-  clap:         0.10,
-  rim:          0.08,
-  tom_lo:       0.06,
-  tom_hi:       0.06,
-  bass:         0.20,
+// ── Drum density by track type suffix ─────────────────────────────────────────
+const DENSITY_BY_TYPE: Record<string, number> = {
+  kick: 0.13, snare: 0.13, hihat_closed: 0.30, hihat_open: 0.06,
+  cymbal: 0.04, clap: 0.10, rim: 0.08, tom_lo: 0.06, tom_hi: 0.06,
+  bass: 0.20, cowbell: 0.05,
+}
+
+function trackDensity(id: string): number {
+  const suffix = id.replace(/^(tr808|tr909|tr606|tr707|tb303|sh101)_/, '')
+  return DENSITY_BY_TYPE[suffix] ?? 0.25
 }
 
 // ── Module-level helpers ───────────────────────────────────────────────────────
@@ -50,7 +48,7 @@ function applyAmenPreset(stepCount: StepCount, activeIndices: number[]): Step[] 
 }
 
 function randomizeTrack(trackId: string, stepCount: StepCount, isBass: boolean): Step[] {
-  const density = RANDOM_DENSITY[trackId] ?? 0.25
+  const density = trackDensity(trackId)
   return makeSteps(stepCount).map(() => {
     if (Math.random() > density) return { active: false, velocity: 0.8 }
     const velocity = 0.6 + Math.random() * 0.4
@@ -62,23 +60,69 @@ function randomizeTrack(trackId: string, stepCount: StepCount, isBass: boolean):
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const DEFAULT_TRACKS: Track[] = [
-  { id: 'kick',         synthType: 'membrane', label: 'KICK',  color: '#ff6b35', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C1'  },
-  { id: 'snare',        synthType: 'noise',    label: 'SNARE', color: '#ff3575', steps: makeSteps(16), volume: 0.85, muted: false, note: 'D1'  },
-  { id: 'hihat_closed', synthType: 'metal',    label: 'HH CL', color: '#22d3ee', steps: makeSteps(16), volume: 0.7,  muted: false, note: 'F#1' },
-  { id: 'hihat_open',   synthType: 'metal',    label: 'HH OP', color: '#0ea5e9', steps: makeSteps(16), volume: 0.65, muted: false, note: 'A#1' },
-  { id: 'clap',         synthType: 'noise',    label: 'CLAP',  color: '#a855f7', steps: makeSteps(16), volume: 0.75, muted: false, note: 'E1'  },
-  { id: 'rim',          synthType: 'metal',    label: 'RIM',   color: '#84cc16', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#1' },
-  { id: 'tom_lo',       synthType: 'membrane', label: 'TOM L', color: '#f59e0b', steps: makeSteps(16), volume: 0.75, muted: false, note: 'G1'  },
-  { id: 'tom_hi',       synthType: 'membrane', label: 'TOM H', color: '#fb923c', steps: makeSteps(16), volume: 0.75, muted: false, note: 'A1'  },
-  { id: 'cymbal',       synthType: 'metal',    label: 'CYMBL', color: '#34d399', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#2' },
-  { id: 'bass',         synthType: 'synth',    label: 'BASS',  color: '#7c3aed', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C2'  },
+  // TR-808
+  { id: 'tr808_kick',         synthType: 'membrane', label: 'BD',   color: '#ff6b35', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C1'  },
+  { id: 'tr808_snare',        synthType: 'noise',    label: 'SD',   color: '#ff3575', steps: makeSteps(16), volume: 0.85, muted: false, note: 'D1'  },
+  { id: 'tr808_hihat_closed', synthType: 'metal',    label: 'CH',   color: '#22d3ee', steps: makeSteps(16), volume: 0.7,  muted: false, note: 'F#1' },
+  { id: 'tr808_hihat_open',   synthType: 'metal',    label: 'OH',   color: '#0ea5e9', steps: makeSteps(16), volume: 0.65, muted: false, note: 'A#1' },
+  { id: 'tr808_clap',         synthType: 'noise',    label: 'CP',   color: '#a855f7', steps: makeSteps(16), volume: 0.75, muted: false, note: 'E1'  },
+  { id: 'tr808_rim',          synthType: 'metal',    label: 'RS',   color: '#84cc16', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#1' },
+  { id: 'tr808_tom_lo',       synthType: 'membrane', label: 'LT',   color: '#f59e0b', steps: makeSteps(16), volume: 0.75, muted: false, note: 'G1'  },
+  { id: 'tr808_tom_hi',       synthType: 'membrane', label: 'HT',   color: '#fb923c', steps: makeSteps(16), volume: 0.75, muted: false, note: 'A1'  },
+  { id: 'tr808_cymbal',       synthType: 'metal',    label: 'CY',   color: '#34d399', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#2' },
+  { id: 'tr808_cowbell',      synthType: 'metal',    label: 'CB',   color: '#fbbf24', steps: makeSteps(16), volume: 0.5,  muted: false, note: 'G#1' },
+  // TR-909
+  { id: 'tr909_kick',         synthType: 'membrane', label: 'BD',   color: '#ff6b35', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C1'  },
+  { id: 'tr909_snare',        synthType: 'noise',    label: 'SD',   color: '#ff3575', steps: makeSteps(16), volume: 0.85, muted: false, note: 'D1'  },
+  { id: 'tr909_hihat_closed', synthType: 'metal',    label: 'CH',   color: '#22d3ee', steps: makeSteps(16), volume: 0.7,  muted: false, note: 'F#1' },
+  { id: 'tr909_hihat_open',   synthType: 'metal',    label: 'OH',   color: '#0ea5e9', steps: makeSteps(16), volume: 0.65, muted: false, note: 'A#1' },
+  { id: 'tr909_clap',         synthType: 'noise',    label: 'HC',   color: '#a855f7', steps: makeSteps(16), volume: 0.75, muted: false, note: 'E1'  },
+  { id: 'tr909_rim',          synthType: 'metal',    label: 'RM',   color: '#84cc16', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#1' },
+  { id: 'tr909_tom_lo',       synthType: 'membrane', label: 'LT',   color: '#f59e0b', steps: makeSteps(16), volume: 0.75, muted: false, note: 'G1'  },
+  { id: 'tr909_tom_hi',       synthType: 'membrane', label: 'HT',   color: '#fb923c', steps: makeSteps(16), volume: 0.75, muted: false, note: 'A1'  },
+  { id: 'tr909_cymbal',       synthType: 'metal',    label: 'CC',   color: '#34d399', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#2' },
+  // TR-606
+  { id: 'tr606_kick',         synthType: 'membrane', label: 'BD',   color: '#ff6b35', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C1'  },
+  { id: 'tr606_snare',        synthType: 'noise',    label: 'SD',   color: '#ff3575', steps: makeSteps(16), volume: 0.85, muted: false, note: 'D1'  },
+  { id: 'tr606_hihat_closed', synthType: 'metal',    label: 'CH',   color: '#22d3ee', steps: makeSteps(16), volume: 0.7,  muted: false, note: 'F#1' },
+  { id: 'tr606_hihat_open',   synthType: 'metal',    label: 'OH',   color: '#0ea5e9', steps: makeSteps(16), volume: 0.65, muted: false, note: 'A#1' },
+  { id: 'tr606_clap',         synthType: 'noise',    label: 'CP',   color: '#a855f7', steps: makeSteps(16), volume: 0.75, muted: false, note: 'E1'  },
+  { id: 'tr606_rim',          synthType: 'metal',    label: 'RS',   color: '#84cc16', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#1' },
+  { id: 'tr606_tom_lo',       synthType: 'membrane', label: 'LT',   color: '#f59e0b', steps: makeSteps(16), volume: 0.75, muted: false, note: 'G1'  },
+  { id: 'tr606_tom_hi',       synthType: 'membrane', label: 'HT',   color: '#fb923c', steps: makeSteps(16), volume: 0.75, muted: false, note: 'A1'  },
+  { id: 'tr606_cymbal',       synthType: 'metal',    label: 'CY',   color: '#34d399', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#2' },
+  // TR-707
+  { id: 'tr707_kick',         synthType: 'membrane', label: 'BD',   color: '#ff6b35', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C1'  },
+  { id: 'tr707_snare',        synthType: 'noise',    label: 'SD',   color: '#ff3575', steps: makeSteps(16), volume: 0.85, muted: false, note: 'D1'  },
+  { id: 'tr707_hihat_closed', synthType: 'metal',    label: 'CH',   color: '#22d3ee', steps: makeSteps(16), volume: 0.7,  muted: false, note: 'F#1' },
+  { id: 'tr707_hihat_open',   synthType: 'metal',    label: 'OH',   color: '#0ea5e9', steps: makeSteps(16), volume: 0.65, muted: false, note: 'A#1' },
+  { id: 'tr707_clap',         synthType: 'noise',    label: 'CW',   color: '#a855f7', steps: makeSteps(16), volume: 0.75, muted: false, note: 'E1'  },
+  { id: 'tr707_rim',          synthType: 'metal',    label: 'RM',   color: '#84cc16', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#1' },
+  { id: 'tr707_tom_lo',       synthType: 'membrane', label: 'LT',   color: '#f59e0b', steps: makeSteps(16), volume: 0.75, muted: false, note: 'G1'  },
+  { id: 'tr707_tom_hi',       synthType: 'membrane', label: 'HT',   color: '#fb923c', steps: makeSteps(16), volume: 0.75, muted: false, note: 'A1'  },
+  { id: 'tr707_cymbal',       synthType: 'metal',    label: 'CY',   color: '#34d399', steps: makeSteps(16), volume: 0.6,  muted: false, note: 'C#2' },
+  // Bass machines
+  { id: 'tb303_bass',         synthType: 'mono',     label: 'BASS', color: '#a855f7', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C2'  },
+  { id: 'sh101_bass',         synthType: 'mono',     label: 'BASS', color: '#f59e0b', steps: makeSteps(16), volume: 0.9,  muted: false, note: 'C2'  },
 ]
 
-const AMEN_PRESET: Partial<Record<TrackId, number[]>> = {
-  kick:         [0, 6, 9, 12],
-  snare:        [4, 10, 14],
-  hihat_closed: [0, 2, 4, 6, 8, 10, 12, 14],
-  hihat_open:   [3, 11],
+const AMEN_PRESET: Partial<Record<string, number[]>> = {
+  tr808_kick:         [0, 6, 9, 12],
+  tr808_snare:        [4, 10, 14],
+  tr808_hihat_closed: [0, 2, 4, 6, 8, 10, 12, 14],
+  tr808_hihat_open:   [3, 11],
+  tr909_kick:         [0, 6, 9, 12],
+  tr909_snare:        [4, 10, 14],
+  tr909_hihat_closed: [0, 2, 4, 6, 8, 10, 12, 14],
+  tr909_hihat_open:   [3, 11],
+  tr606_kick:         [0, 6, 9, 12],
+  tr606_snare:        [4, 10, 14],
+  tr606_hihat_closed: [0, 2, 4, 6, 8, 10, 12, 14],
+  tr606_hihat_open:   [3, 11],
+  tr707_kick:         [0, 6, 9, 12],
+  tr707_snare:        [4, 10, 14],
+  tr707_hihat_closed: [0, 2, 4, 6, 8, 10, 12, 14],
+  tr707_hihat_open:   [3, 11],
 }
 
 const CUSTOM_COLORS = [
@@ -97,6 +141,7 @@ interface SequencerActions {
   setBpm: (bpm: number) => void
   setSwing: (swing: number) => void
   setStepCount: (count: StepCount) => void
+  setTrackStepCount: (trackId: string, count: StepCount) => void
   setPlaying: (playing: boolean) => void
   setCurrentStep: (step: number) => void
   setKit: (kit: KitId) => void
@@ -204,6 +249,13 @@ export const useSequencerStore = create<SequencerState & SequencerActions>((set,
       tracks: state.tracks.map((t) => ({ ...t, steps: resizeSteps(t.steps, stepCount) })),
     })),
 
+  setTrackStepCount: (trackId, count) =>
+    set((state) => ({
+      tracks: state.tracks.map((t) =>
+        t.id === trackId ? { ...t, steps: resizeSteps(t.steps, count) } : t
+      ),
+    })),
+
   setPlaying: (isPlaying) => set({ isPlaying }),
   setCurrentStep: (currentStep) => set({ currentStep }),
 
@@ -260,7 +312,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>((set,
       return {
         tracks: state.tracks.map((t) => {
           if (!machineTids.has(t.id) && !t.custom) return t
-          const isBass = t.id === 'bass' || t.synthType === 'mono'
+          const isBass = t.synthType === 'mono' || t.synthType === 'synth'
           return { ...t, steps: randomizeTrack(t.id, state.stepCount, isBass) }
         }),
       }
