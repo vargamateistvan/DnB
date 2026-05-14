@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
-import { KnobControl } from './KnobControl'
 import type { KitId } from '../types'
 
 const BTN_SIZE = 28
@@ -155,10 +154,8 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
   const isPlaying = useSequencerStore((s) => s.isPlaying)
   const toggleStep = useSequencerStore((s) => s.toggleStep)
   const toggleMute = useSequencerStore((s) => s.toggleMute)
-  const setVolume = useSequencerStore((s) => s.setVolume)
   const addTrack = useSequencerStore((s) => s.addTrack)
   const removeTrack = useSequencerStore((s) => s.removeTrack)
-  const setTrackStepCount = useSequencerStore((s) => s.setTrackStepCount)
   const trackKits = useSequencerStore((s) => s.trackKits)
 
   const theme = MACHINE_THEMES[kitId]
@@ -222,9 +219,9 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
 
           const is808label = effectiveKit === 'tr808' || effectiveKit === 'tr606' || effectiveKit === 'tr707' || effectiveKit === 'tr909'
 
-          const trackStepCount = track.steps.length
+          const stepCount = track.steps.length
           const trackGroups: number[][] = []
-          for (let i = 0; i < trackStepCount; i += 4) trackGroups.push([i, i + 1, i + 2, i + 3])
+          for (let i = 0; i < stepCount; i += 4) trackGroups.push([i, i + 1, i + 2, i + 3])
 
           return (
             <div key={track.id} className="group flex items-center gap-1.5">
@@ -274,7 +271,7 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                     {group.map((stepIdx) => {
                       const step = track.steps[stepIdx]
                       const isActive = step?.active ?? false
-                      const isCurrent = isPlaying && (currentStep % trackStepCount) === stepIdx
+                      const isCurrent = isPlaying && (currentStep % stepCount) === stepIdx
                       const isBeat1 = stepIdx % 4 === 0
                       const velocity = step?.velocity ?? 0.85
 
@@ -300,32 +297,6 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                       )
                     })}
                   </div>
-                ))}
-              </div>
-
-              {/* Volume knob */}
-              <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <KnobControl
-                  value={track.volume} label="VOL" color={trackTheme.accent} size={28}
-                  trackColor={trackTheme.border} bodyColor={trackTheme.panel} labelColor={trackTheme.textDim}
-                  onChange={(v) => setVolume(track.id, v)}
-                />
-              </div>
-
-              {/* Per-track step count */}
-              <div className="shrink-0 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                {([16, 32, 64] as const).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setTrackStepCount(track.id, n)}
-                    className="font-mono text-[9px] font-bold w-5 h-5"
-                    style={{
-                      background: trackStepCount === n ? trackTheme.accent : 'transparent',
-                      border: `1px solid ${trackStepCount === n ? trackTheme.accent : trackTheme.border}`,
-                      borderRadius: '2px',
-                      color: trackStepCount === n ? '#000' : trackTheme.textDim,
-                    }}
-                  >{n}</button>
                 ))}
               </div>
 

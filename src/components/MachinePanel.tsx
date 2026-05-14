@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, isBassLine } from '../machines'
 import { MachineControls } from './MachineControls'
@@ -8,6 +9,102 @@ import type { KitId } from '../types'
 const KIT_LABELS: Record<KitId, string> = {
   tr808: 'TR-808', tr909: 'TR-909', tr606: 'TR-606',
   tr707: 'TR-707', tb303: 'TB-303', sh101: 'SH-101',
+}
+
+interface MachineInfoData {
+  fullName: string
+  year: number
+  type: string
+  specs: string[]
+  knownFor: string
+}
+
+const MACHINE_INFO: Record<KitId, MachineInfoData> = {
+  tr808: {
+    fullName: 'Roland TR-808 Rhythm Composer',
+    year: 1980,
+    type: 'Analog Drum Machine',
+    specs: ['12 analog voices', 'Programmable 32-step sequencer', 'Accent & shuffle control', 'Trigger/gate outputs'],
+    knownFor: 'Hip-hop, trap, electro — defining the booming kick and snappy clap heard on countless records.',
+  },
+  tr909: {
+    fullName: 'Roland TR-909 Rhythm Composer',
+    year: 1983,
+    type: 'Analog / PCM Drum Machine',
+    specs: ['9 voices — analog kick, snare & hi-hats', 'PCM cymbals & claps', 'MIDI in/out/thru', 'Accent, shuffle, flam'],
+    knownFor: 'House & techno — the punchy kick and crisp snare that built dance music.',
+  },
+  tr606: {
+    fullName: 'Roland TR-606 Drumatix',
+    year: 1981,
+    type: 'Analog Drum Machine',
+    specs: ['7 fully analog voices', 'DIN sync (cassette tape)', 'Designed as TB-303 companion', 'Compact desktop form'],
+    knownFor: 'Electro, post-punk, EBM — raw, lo-fi analog textures.',
+  },
+  tr707: {
+    fullName: 'Roland TR-707 Rhythm Composer',
+    year: 1984,
+    type: 'PCM Drum Machine',
+    specs: ['16 digital PCM voices', 'MIDI in/out/thru', 'External floppy disk storage', 'Velocity sensitive pads'],
+    knownFor: '80s pop, R&B and new wave — bright, punchy digital sounds.',
+  },
+  tb303: {
+    fullName: 'Roland TB-303 Bass Line',
+    year: 1981,
+    type: 'Monophonic Bass Synthesizer',
+    specs: ['1 VCO — sawtooth or square wave', 'Resonant 18 dB lowpass filter', 'Filter envelope with accent', 'Built-in step sequencer'],
+    knownFor: 'Acid house & techno — the signature squelching resonance that launched an entire genre.',
+  },
+  sh101: {
+    fullName: 'Roland SH-101 Synthesizer',
+    year: 1982,
+    type: 'Monophonic Analog Synthesizer',
+    specs: ['1 VCO with sub-oscillator', '24 dB lowpass filter (LPF)', 'LFO with multiple shapes', 'Built-in arpeggiator & sequencer'],
+    knownFor: 'New wave, synth-pop and acid house — warm leads and driving basslines.',
+  },
+}
+
+function MachineTooltip({ kitId }: { readonly kitId: KitId }) {
+  const theme = MACHINE_THEMES[kitId]
+  const info  = MACHINE_INFO[kitId]
+
+  return (
+    <div
+      className="absolute z-50 pointer-events-none"
+      style={{
+        left: '28px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        background: theme.surface,
+        border: `1px solid ${theme.border}`,
+        borderRadius: '4px',
+        padding: '10px 12px',
+        minWidth: '230px',
+        boxShadow: '0 6px 24px rgba(0,0,0,0.45)',
+      }}
+    >
+      <div className="font-mono text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: theme.accent }}>
+        {info.fullName}
+      </div>
+      <div className="font-mono text-[9px] mb-2.5" style={{ color: theme.textDim }}>
+        {info.year} · {info.type}
+      </div>
+      <div className="flex flex-col gap-1 mb-2.5">
+        {info.specs.map((spec) => (
+          <div key={spec} className="flex items-start gap-1.5 font-mono text-[9px]" style={{ color: theme.text }}>
+            <span style={{ color: theme.accent, flexShrink: 0 }}>·</span>
+            {spec}
+          </div>
+        ))}
+      </div>
+      <div
+        className="font-mono text-[9px] leading-relaxed"
+        style={{ color: theme.textDim, borderTop: `1px solid ${theme.border}`, paddingTop: '7px' }}
+      >
+        {info.knownFor}
+      </div>
+    </div>
+  )
 }
 
 interface Props {
@@ -23,6 +120,7 @@ export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop }: Props) {
   const theme = MACHINE_THEMES[kitId]
   const isBass = isBassLine(kitId)
   const isMuted = mutedKits.includes(kitId)
+  const [showInfo, setShowInfo] = useState(false)
 
   return (
     <div
@@ -33,7 +131,7 @@ export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop }: Props) {
       <div className="flex">
         {/* Label strip: machine name + mute button */}
         <div
-          className="shrink-0 flex flex-col items-center justify-between py-2"
+          className="shrink-0 flex flex-col items-center justify-between py-2 relative"
           style={{ width: '20px', background: theme.surface, borderRight: `1px solid ${theme.border}` }}
         >
           <button
@@ -53,11 +151,14 @@ export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop }: Props) {
             )}
           </button>
           <span
-            className="font-mono text-xs tracking-widest select-none whitespace-nowrap"
+            className="font-mono text-xs tracking-widest select-none whitespace-nowrap cursor-default"
             style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', color: theme.accent }}
+            onMouseEnter={() => setShowInfo(true)}
+            onMouseLeave={() => setShowInfo(false)}
           >
             {KIT_LABELS[kitId]}
           </span>
+          {showInfo && <MachineTooltip kitId={kitId} />}
         </div>
 
         {/* Grid */}
