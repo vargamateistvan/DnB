@@ -175,7 +175,8 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
   const stepNumBeatColor = theme.accent
 
   return (
-    <div className="flex-1 px-4 py-2 relative" style={{ background: theme.bg }}>
+    <div className="flex-1 overflow-x-auto relative" style={{ background: theme.bg }}>
+      <div className="px-4 py-2" style={{ minWidth: 'max-content' }}>
       {/* TR-707 grid lines */}
       {theme.gridLines && (
         <div
@@ -339,6 +340,8 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
           )
         })}
       </div>
+
+      </div>{/* end min-width scroll wrapper */}
 
       {/* Machine name watermark */}
       <div

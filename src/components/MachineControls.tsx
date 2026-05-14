@@ -165,8 +165,8 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
     }
 
     return (
-      <div className="shrink-0 border-t" style={{ background: panelBg, borderColor: panelBorder }}>
-        <div className="flex items-end gap-6 px-6 py-3">
+      <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>
+        <div className="flex items-end gap-6 px-6 py-3" style={{ minWidth: 'max-content' }}>
           {/* RANDOM + LEVEL */}
           <div className="flex flex-col gap-2">
             <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: panelLabel }}>RANDOM</span>
@@ -208,8 +208,8 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
   if (kit === 'tr808') {
     const p = params.tr808
     return (
-      <div className="shrink-0 border-t" style={{ background: theme.panel, borderColor: theme.border }}>
-        <div className="flex items-end gap-3 px-6 pt-2 pb-0 border-b" style={{ borderColor: theme.border }}>
+      <div className="shrink-0 border-t overflow-x-auto" style={{ background: theme.panel, borderColor: theme.border }}>
+        <div className="flex items-end gap-3 px-6 pt-2 pb-0 border-b" style={{ borderColor: theme.border, minWidth: 'max-content' }}>
           {rotaryLevels}
           {divider()}
           {knob(p.accentLevel, 'ACCENT',  44, (v) => setMachineParam('tr808', 'accentLevel', v))}
@@ -237,7 +237,8 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
     const knobBody = '#888884'
 
     return (
-      <div className="shrink-0 border-t" style={{ background: panelBg, borderColor: panelBorder }}>
+      <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>
+        <div style={{ minWidth: 'max-content' }}>
         {/* Orange step number strip */}
         <div className="flex px-6" style={{ background: panelAccent }}>
           {Array.from({ length: 16 }, (_, i) => (
@@ -285,6 +286,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
             <RandomBtn onClick={() => randomize(kit)} accent={panelAccent} border={panelBorder} textDim={panelLabel} />
           </div>
         </div>
+        </div>{/* end min-width wrapper */}
       </div>
     )
   }
@@ -300,8 +302,8 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
     const knobBody = '#222'
 
     return (
-      <div className="shrink-0 border-t" style={{ background: panelBg, borderColor: panelBorder }}>
-        <div className="flex items-end gap-4 px-6 py-3">
+      <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>
+        <div className="flex items-end gap-4 px-6 py-3" style={{ minWidth: 'max-content' }}>
           {MACHINE_TRACKS.tr606.map((trackDef) => {
             const track = tracks.find((t) => t.id === trackDef.id)
             if (!track) return null
@@ -345,7 +347,8 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
     const knobBody = '#c8c4b0'
 
     return (
-      <div className="shrink-0 border-t" style={{ background: panelBg, borderColor: panelBorder }}>
+      <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>
+        <div style={{ minWidth: 'max-content' }}>
         {/* Orange step number strip */}
         <div className="flex px-6" style={{ background: panelAccent }}>
           {Array.from({ length: 16 }, (_, i) => (
@@ -396,6 +399,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
             <RandomBtn onClick={() => randomize(kit)} accent={panelAccent} border={panelBorder} textDim={panelLabel} />
           </div>
         </div>
+        </div>{/* end min-width wrapper */}
       </div>
     )
   }

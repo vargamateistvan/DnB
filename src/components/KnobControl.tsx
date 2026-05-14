@@ -46,7 +46,6 @@ export function KnobControl({
     (e: React.MouseEvent) => {
       e.preventDefault()
       dragRef.current = { startY: e.clientY, startVal: value }
-
       const onMove = (ev: MouseEvent) => {
         if (!dragRef.current) return
         const delta = (dragRef.current.startY - ev.clientY) / 120
@@ -63,9 +62,29 @@ export function KnobControl({
     [value, onChange]
   )
 
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      e.preventDefault()
+      dragRef.current = { startY: e.touches[0].clientY, startVal: value }
+      const onMove = (ev: TouchEvent) => {
+        if (!dragRef.current) return
+        const delta = (dragRef.current.startY - ev.touches[0].clientY) / 120
+        onChange(Math.max(0, Math.min(1, dragRef.current.startVal + delta)))
+      }
+      const onUp = () => {
+        dragRef.current = null
+        window.removeEventListener('touchmove', onMove)
+        window.removeEventListener('touchend', onUp)
+      }
+      window.addEventListener('touchmove', onMove, { passive: false })
+      window.addEventListener('touchend', onUp)
+    },
+    [value, onChange]
+  )
+
   return (
     <div className="flex flex-col items-center gap-0.5 select-none">
-      <svg width={size} height={size} className="cursor-ns-resize" onMouseDown={onMouseDown}>
+      <svg width={size} height={size} className="cursor-ns-resize" onMouseDown={onMouseDown} onTouchStart={onTouchStart}>
         <path d={arcPath(135)} stroke={trackColor} strokeWidth="3" fill="none" strokeLinecap="round" />
         <path d={arcPath(angle)} stroke={color} strokeWidth="3" fill="none" strokeLinecap="round" />
         <circle cx={cx} cy={cy} r={r * 0.7} fill={bodyColor} stroke={trackColor} strokeWidth="1.5" />
