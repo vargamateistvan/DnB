@@ -1,38 +1,18 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useRef, useState } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import { KnobControl } from './KnobControl'
+import { MACHINE_PRESETS } from '../presets'
 import type { KitId } from '../types'
 
-interface RandomBtnProps {
-  readonly onClick: () => void
-  readonly accent: string
-  readonly border: string
-  readonly textDim: string
-}
 
-function RandomBtn({ onClick, accent, border, textDim }: RandomBtnProps) {
-  return (
-    <button
-      onClick={onClick}
-      className="px-2.5 py-1 font-mono text-[10px] font-bold uppercase transition-all self-end mb-1"
-      style={{ border: `1px solid ${border}`, borderRadius: '3px', color: textDim, background: 'transparent' }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = textDim }}
-    >
-      RND
-    </button>
-  )
-}
-
-export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
+export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: KitId; readonly onPlay?: () => void; readonly onStop?: () => void }) {
   const primaryKit = useSequencerStore((s) => s.kit)
   const kit = kitId ?? primaryKit
   const params = useSequencerStore((s) => s.machineParams)
   const tracks = useSequencerStore((s) => s.tracks)
   const setMachineParam = useSequencerStore((s) => s.setMachineParam)
   const setVolume = useSequencerStore((s) => s.setVolume)
-  const randomize = useSequencerStore((s) => s.randomize)
   const theme = MACHINE_THEMES[kit]
 
   const accent = theme.accent
@@ -138,7 +118,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
         )}
 
         {divider()}
-        <RandomBtn onClick={() => randomize(kit)} accent={accent} border={theme.border} textDim={labelColor} />
+        <PresetBar kitId="sh101" accent={accent} border={theme.border} labelColor={labelColor} onPlay={onPlay} onStop={onStop} />
       </div>
     )
   }
@@ -167,10 +147,8 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
     return (
       <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>
         <div className="flex items-end gap-6 px-6 py-3" style={{ minWidth: 'max-content' }}>
-          {/* RANDOM + LEVEL */}
+          {/* LEVEL */}
           <div className="flex flex-col gap-2">
-            <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: panelLabel }}>RANDOM</span>
-            <RandomBtn onClick={() => randomize(kit)} accent={panelAccent} border={panelBorder} textDim={panelLabel} />
             {bassTrack && (
               <KnobControl
                 value={bassTrack.volume} label="LEVEL" color={panelAccent}
@@ -199,6 +177,10 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
               onChange={(w) => setMachineParam('tb303', 'waveform', w as 'sawtooth' | 'square')}
             />
           </div>
+
+          <div className="w-px self-stretch opacity-30" style={{ background: panelBorder }} />
+
+          <PresetBar kitId="tb303" accent={panelAccent} border={panelBorder} labelColor={panelLabel} onPlay={onPlay} onStop={onStop} />
         </div>
       </div>
     )
@@ -215,7 +197,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
           {knob(p.accentLevel, 'ACCENT',  44, (v) => setMachineParam('tr808', 'accentLevel', v))}
           {knob(p.shuffle,     'SHUFFLE', 44, (v) => setMachineParam('tr808', 'shuffle',     v))}
           {divider()}
-          <div className="self-end mb-1"><RandomBtn onClick={() => randomize(kit)} accent={accent} border={theme.border} textDim={labelColor} /></div>
+          <PresetBar kitId="tr808" accent={accent} border={theme.border} labelColor={labelColor} onPlay={onPlay} onStop={onStop} />
         </div>
         <div className="flex justify-start px-6 py-1">
           <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: labelColor }}>
@@ -282,9 +264,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
 
           <div className="w-px self-stretch opacity-40" style={{ background: panelBorder }} />
 
-          <div className="self-end mb-1">
-            <RandomBtn onClick={() => randomize(kit)} accent={panelAccent} border={panelBorder} textDim={panelLabel} />
-          </div>
+          <PresetBar kitId="tr909" accent={panelAccent} border={panelBorder} labelColor={panelLabel} onPlay={onPlay} onStop={onStop} />
         </div>
         </div>{/* end min-width wrapper */}
       </div>
@@ -328,9 +308,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
 
           <div className="w-px self-stretch opacity-30" style={{ background: panelBorder }} />
 
-          <div className="self-end mb-1">
-            <RandomBtn onClick={() => randomize(kit)} accent={panelAccent} border={panelBorder} textDim={panelLabel} />
-          </div>
+          <PresetBar kitId="tr606" accent={panelAccent} border={panelBorder} labelColor={panelLabel} onPlay={onPlay} onStop={onStop} />
         </div>
       </div>
     )
@@ -395,9 +373,7 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
 
           <div className="w-px self-stretch opacity-40" style={{ background: panelBorder }} />
 
-          <div className="self-end mb-1">
-            <RandomBtn onClick={() => randomize(kit)} accent={panelAccent} border={panelBorder} textDim={panelLabel} />
-          </div>
+          <PresetBar kitId="tr707" accent={panelAccent} border={panelBorder} labelColor={panelLabel} onPlay={onPlay} onStop={onStop} />
         </div>
         </div>{/* end min-width wrapper */}
       </div>
@@ -405,6 +381,126 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
   }
 
   return null
+}
+
+// ── PresetBar ─────────────────────────────────────────────────────────────────
+
+interface PresetBarProps {
+  readonly kitId: KitId
+  readonly accent: string
+  readonly border: string
+  readonly labelColor: string
+  readonly onPlay?: () => void
+  readonly onStop?: () => void
+}
+
+type SavedPreviewState = {
+  tracks: import('../types').Track[]
+  mutedKits: import('../types').KitId[]
+}
+
+function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: PresetBarProps) {
+  const loadMachinePreset = useSequencerStore((s) => s.loadMachinePreset)
+  const loadState         = useSequencerStore((s) => s.loadState)
+  const presets    = MACHINE_PRESETS[kitId]
+  const accentText = accent === '#fff' ? '#000' : '#fff'
+
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
+
+  const ownTrackIds  = useRef(new Set(MACHINE_TRACKS[kitId].map((t) => t.id as string)))
+  const savedRef     = useRef<SavedPreviewState | null>(null)
+  const startedRef   = useRef(false)
+  const committedRef = useRef(false)
+
+  const handleContainerEnter = () => {
+    if (savedRef.current) return
+    const state = useSequencerStore.getState()
+    // Snapshot full state so we can restore on leave
+    savedRef.current = {
+      tracks: state.tracks.map((t) => ({ ...t, steps: t.steps.map((s) => ({ ...s })) })),
+      mutedKits: [...state.mutedKits],
+    }
+    // Solo this kit — mute every other active kit
+    const others = state.activeKits.filter((k) => k !== kitId)
+    if (others.length > 0) {
+      const otherIds = new Set(others.flatMap((k) => MACHINE_TRACKS[k].map((t) => t.id as string)))
+      loadState({
+        mutedKits: [...new Set([...state.mutedKits, ...others])],
+        tracks: state.tracks.map((t) => otherIds.has(t.id) ? { ...t, muted: true } : t),
+      })
+    }
+    if (!state.isPlaying) {
+      onPlay?.()
+      startedRef.current = true
+    }
+  }
+
+  const handleContainerLeave = () => {
+    setHoveredIdx(null)
+    if (!savedRef.current) return
+    const saved = savedRef.current
+    if (committedRef.current) {
+      // Keep this kit's preset; restore mute state for everything else
+      const cur = useSequencerStore.getState()
+      const own = ownTrackIds.current
+      loadState({
+        mutedKits: saved.mutedKits,
+        tracks: cur.tracks.map((t) =>
+          own.has(t.id) ? t : (saved.tracks.find((x) => x.id === t.id) ?? t)
+        ),
+      })
+    } else {
+      // Full revert
+      loadState({ tracks: saved.tracks, mutedKits: saved.mutedKits })
+      if (startedRef.current) onStop?.()
+    }
+    savedRef.current   = null
+    startedRef.current  = false
+    committedRef.current = false
+  }
+
+  return (
+    <div
+      className="flex flex-col gap-1.5 shrink-0"
+      onMouseEnter={handleContainerEnter}
+      onMouseLeave={handleContainerLeave}
+    >
+      <span className="font-mono text-[8px] uppercase tracking-widest" style={{ color: labelColor }}>
+        PRESET
+      </span>
+
+      {/* 2-column named grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2px' }}>
+        {presets.map((preset, i) => {
+          const active = hoveredIdx === i
+          return (
+            <button
+              key={preset.name}
+              onMouseEnter={() => { setHoveredIdx(i); loadMachinePreset(kitId, preset) }}
+              onMouseLeave={() => setHoveredIdx(null)}
+              onClick={() => { committedRef.current = true }}
+              className="font-mono font-bold select-none uppercase text-left"
+              style={{
+                padding: '3px 7px',
+                fontSize: '9px',
+                letterSpacing: '0.04em',
+                cursor: 'pointer',
+                borderRadius: '2px',
+                border: `1px solid ${active ? accent : border}`,
+                background: active ? accent : 'transparent',
+                color: active ? accentText : labelColor,
+                boxShadow: active ? `0 0 8px ${accent}88` : 'none',
+                transition: 'background 80ms, color 80ms, border-color 80ms, box-shadow 80ms',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {preset.name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 // ── WaveToggle ────────────────────────────────────────────────────────────────

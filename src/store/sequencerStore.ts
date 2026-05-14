@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Step, Track, TrackId, KitId, SequencerState, MachineParams } from '../types'
 import { DEFAULT_MACHINE_PARAMS, MACHINE_TRACKS } from '../machines'
+import type { MachinePreset, PresetStep } from '../presets'
 
 type StepCount = 16 | 32 | 64
 
@@ -46,6 +47,16 @@ function applyAmenPreset(stepCount: StepCount, activeIndices: number[]): Step[] 
   return makeSteps(stepCount).map((s, i) =>
     activeIndices.includes(i % 16) ? { active: true, velocity: 0.85 } : s
   )
+}
+
+function applyPresetSteps(track: Track, presetSteps: PresetStep[] | undefined): Track {
+  const newSteps: Step[] = track.steps.map(() => ({ active: false, velocity: 0.8 }))
+  for (const { index, velocity = 0.8, note } of presetSteps ?? []) {
+    if (index < newSteps.length) {
+      newSteps[index] = { active: true, velocity, ...(note ? { note } : {}) }
+    }
+  }
+  return { ...track, steps: newSteps }
 }
 
 function randomizeTrack(trackId: string, stepCount: StepCount, isBass: boolean): Step[] {
@@ -155,6 +166,7 @@ interface SequencerActions {
   addTrack: (afterId: string) => void
   removeTrack: (id: string) => void
   loadPreset: (preset: 'amen' | 'clear') => void
+  loadMachinePreset: (kitId: KitId, preset: MachinePreset) => void
   randomize: (kitId?: KitId) => void
 }
 
@@ -308,6 +320,16 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
           const activeIndices = AMEN_PRESET[t.id as TrackId] ?? []
           return { ...t, steps: applyAmenPreset(state.stepCount, activeIndices) }
         }),
+      }
+    }),
+
+  loadMachinePreset: (kitId, preset) =>
+    set((state) => {
+      const kitTrackIds = new Set(MACHINE_TRACKS[kitId].map((t) => t.id))
+      return {
+        tracks: state.tracks.map((t) =>
+          kitTrackIds.has(t.id) ? applyPresetSteps(t, preset.tracks[t.id]) : t
+        ),
       }
     }),
 

@@ -11,11 +11,13 @@ const KIT_LABELS: Record<KitId, string> = {
 }
 
 interface Props {
-  kitId: KitId
-  onPadTrigger: (trackId: string) => void
+  readonly kitId: KitId
+  readonly onPadTrigger: (trackId: string) => void
+  readonly onPlay: () => void
+  readonly onStop: () => void
 }
 
-export function MachinePanel({ kitId, onPadTrigger }: Props) {
+export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop }: Props) {
   const mutedKits = useSequencerStore((s) => s.mutedKits)
   const toggleMachineKitMute = useSequencerStore((s) => s.toggleMachineKitMute)
   const theme = MACHINE_THEMES[kitId]
@@ -65,7 +67,7 @@ export function MachinePanel({ kitId, onPadTrigger }: Props) {
         }
       </div>
 
-      <MachineControls kitId={kitId} />
+      <MachineControls kitId={kitId} onPlay={onPlay} onStop={onStop} />
     </div>
   )
 }
