@@ -7,9 +7,10 @@ const NOTES: string[] = [
   'B2','A#2','A2','G#2','G2','F#2','F2','E2','D#2','D2','C#2','C2',
 ]
 
-const BTN = 28   // px — step cell size (matches DrumGrid BTN_SIZE)
-const GAP = 2    // px — gap between cells (matches DrumGrid gap-0.5)
-const GRP = 6    // px — gap between beat groups (matches DrumGrid gap-1.5)
+const BTN = 28   // px — column width (matches DrumGrid BTN_SIZE)
+const ROW_H = 40 // px — row height (taller for easier note targeting)
+const GAP = 2    // px — gap between cells
+const GRP = 6    // px — gap between beat groups
 
 // TB-303 triangle clip-path (upward-pointing ▲)
 const TRIANGLE = 'polygon(50% 0%, 0% 100%, 100% 100%)'
@@ -78,7 +79,7 @@ export function PianoRollGrid({ kitId }: Props) {
                   className="shrink-0 flex items-center justify-center select-none font-mono"
                   style={{
                     width: '28px',
-                    height: `${BTN}px`,
+                    height: `${ROW_H}px`,
                     background: chipBg,
                     border: chipBorder,
                     borderRadius: '2px',
@@ -148,7 +149,7 @@ export function PianoRollGrid({ kitId }: Props) {
                             className="select-none shrink-0"
                             style={{
                               width: `${BTN}px`,
-                              height: `${BTN}px`,
+                              height: `${ROW_H}px`,
                               clipPath: TRIANGLE,
                               backgroundColor: curColor,
                               border: 'none',
@@ -210,7 +211,7 @@ export function PianoRollGrid({ kitId }: Props) {
                           className="select-none shrink-0 transition-all"
                           style={{
                             width: `${BTN}px`,
-                            height: `${BTN}px`,
+                            height: `${ROW_H}px`,
                             borderRadius: '2px',
                             border: 'none',
                             cursor: 'pointer',
