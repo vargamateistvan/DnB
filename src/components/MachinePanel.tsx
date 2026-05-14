@@ -83,7 +83,16 @@ function MachineTooltip({ kitId }: { readonly kitId: KitId }) {
         boxShadow: '0 6px 24px rgba(0,0,0,0.45)',
       }}
     >
-      <div className="font-mono text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: theme.accent }}>
+      <div
+        className="mb-0.5"
+        style={{
+          fontFamily: "'Rajdhani', sans-serif",
+          fontWeight: 700,
+          fontSize: '13px',
+          letterSpacing: '0.08em',
+          color: theme.accent,
+        }}
+      >
         {info.fullName}
       </div>
       <div className="font-mono text-[9px] mb-2.5" style={{ color: theme.textDim }}>
@@ -151,8 +160,16 @@ export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop }: Props) {
             )}
           </button>
           <span
-            className="font-mono text-xs tracking-widest select-none whitespace-nowrap cursor-default"
-            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', color: theme.accent }}
+            className="select-none whitespace-nowrap cursor-default"
+            style={{
+              writingMode: 'vertical-rl',
+              transform: 'rotate(180deg)',
+              color: theme.accent,
+              fontFamily: "'Rajdhani', sans-serif",
+              fontWeight: 700,
+              fontSize: '13px',
+              letterSpacing: '0.1em',
+            }}
             onMouseEnter={() => setShowInfo(true)}
             onMouseLeave={() => setShowInfo(false)}
           >

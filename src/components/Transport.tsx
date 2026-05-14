@@ -90,13 +90,25 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
         key={kit.id}
         onClick={() => toggleKit(kit.id)}
         title={`${kit.label} (${kit.year}) — ${kit.description}`}
-        className="flex items-center gap-1.5 transition-all shrink-0"
-        style={{ opacity: isActive ? 1 : 0.35 }}
+        className="flex items-center gap-2 transition-all shrink-0"
       >
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: isActive ? kit.color : '#555' }} />
         <span
-          className="font-mono text-xs font-bold tracking-wider"
-          style={{ color: isActive ? '#fff' : TEXT_DIM, textDecoration: isActive ? 'none' : 'line-through' }}
+          className="w-2 h-2 rounded-full shrink-0 transition-all"
+          style={{
+            background: isActive ? '#22c55e' : '#3a3a3a',
+            boxShadow: isActive ? '0 0 7px #22c55e99' : 'none',
+          }}
+        />
+        <span
+          style={{
+            fontFamily: "'Rajdhani', sans-serif",
+            fontWeight: 700,
+            fontSize: '13px',
+            letterSpacing: '0.06em',
+            color: isActive ? '#ffffff' : '#484848',
+            textDecoration: isActive ? 'none' : 'line-through',
+            transition: 'color 150ms',
+          }}
         >
           {kit.label}
         </span>
