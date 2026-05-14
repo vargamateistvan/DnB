@@ -3,6 +3,8 @@ import * as Tone from 'tone'
 import { useSequencerStore } from '../store/sequencerStore'
 import { KIT_LIST } from '../kits'
 import { useExport } from '../hooks/useExport'
+import { useSessionSlots } from '../hooks/useSessionSlots'
+import { useMidiImport } from '../hooks/useMidiImport'
 
 interface Props {
   onPlay: () => void
@@ -19,6 +21,8 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [recording, setRecording] = useState(false)
   const { exportMidi, startRecording, stopRecording } = useExport(connectToRecorder)
+  const { metas, save, load } = useSessionSlots()
+  const { importMidi } = useMidiImport()
 
   const toggleRecord = useCallback(async () => {
     if (recording) { await stopRecording(); setRecording(false) }
@@ -160,6 +164,16 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
 
       {/* ── Right side: record + menu ─────────────────────────────────────── */}
       <div className="flex items-center gap-3 ml-auto shrink-0">
+        {/* MIDI import */}
+        <button
+          onClick={importMidi}
+          className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
+          style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#4ade80'; e.currentTarget.style.color = '#4ade80' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
+          title="Import MIDI"
+        >↑MIDI</button>
+
         {/* MIDI export */}
         <button
           onClick={exportMidi}
@@ -168,7 +182,7 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#60a5fa'; e.currentTarget.style.color = '#60a5fa' }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
           title="Export MIDI"
-        >MIDI</button>
+        >↓MIDI</button>
 
         {/* Record button */}
         <button
@@ -197,11 +211,41 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
       {menuOpen && (
         <div
           className="absolute top-full right-0 z-50 mt-1 px-4 py-3 font-mono text-xs flex flex-col gap-2"
-          style={{ background: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '4px', minWidth: '160px' }}
+          style={{ background: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '4px', minWidth: '200px' }}
         >
-          <span style={{ color: TEXT_DIM }} className="text-[10px] uppercase tracking-widest">About</span>
-          <span style={{ color: TEXT }}>DnB Studio</span>
-          <span style={{ color: TEXT_DIM }}>6 Roland machines</span>
+          <span style={{ color: TEXT_DIM }} className="text-[10px] uppercase tracking-widest">Slots</span>
+          {(['s1', 's2', 's3', 's4'] as const).map((id, slotIndex) => {
+            const meta = metas[slotIndex]
+            return (
+              <div key={id} className="flex items-center gap-2">
+                <span className="w-5 text-[10px]" style={{ color: TEXT_DIM }}>{id.toUpperCase()}</span>
+                <button
+                  onClick={() => save(slotIndex)}
+                  className="px-2 h-5 text-[10px] font-bold transition-all"
+                  style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#4ade80'; e.currentTarget.style.color = '#4ade80' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
+                >SAVE</button>
+                <button
+                  onClick={() => load(slotIndex)}
+                  disabled={!meta}
+                  className="px-2 h-5 text-[10px] font-bold transition-all"
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${meta ? '#333' : '#222'}`,
+                    borderRadius: '2px',
+                    color: meta ? TEXT_DIM : '#333',
+                    cursor: meta ? 'pointer' : 'default',
+                  }}
+                  onMouseEnter={(e) => { if (meta) { e.currentTarget.style.borderColor = '#60a5fa'; e.currentTarget.style.color = '#60a5fa' } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = meta ? '#333' : '#222'; e.currentTarget.style.color = meta ? TEXT_DIM : '#333' }}
+                >LOAD</button>
+                <span className="text-[9px] truncate" style={{ color: '#444' }}>
+                  {meta ? new Date(meta.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                </span>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

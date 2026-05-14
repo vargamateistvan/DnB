@@ -111,19 +111,15 @@ function buildTR707(): Record<string, AnyToneSynth> {
 }
 
 // ─── TB-303 (1981) ──────────────────────────────────────────────────────────
-// 30 chromatic samples C1–F3 from Roland_TB-303 pack
+// MonoSynth with internal filter bypassed — external filter chain handles VCF
 function buildTB303(): Record<string, AnyToneSynth> {
-  const notes = [
-    'C1','C#1','D1','D#1','E1','F1','F#1','G1','G#1','A1','A#1','B1',
-    'C2','C#2','D2','D#2','E2','F2','F#2','G2','G#2','A2','A#2','B2',
-    'C3','C#3','D3','D#3','E3','F3',
-  ]
-  const urls: Record<string, string> = {}
-  notes.forEach((note, i) => {
-    urls[note] = `bass_${String(i + 1).padStart(2, '0')}.wav`
-  })
   return {
-    tb303_bass: new Tone.Sampler({ urls, baseUrl: BASE + 'samples/tb303/', release: 0.5 }),
+    tb303_bass: new Tone.MonoSynth({
+      oscillator: { type: 'sawtooth' },
+      envelope: { attack: 0.001, decay: 0.3, sustain: 0.05, release: 0.1 },
+      filter: { type: 'lowpass', frequency: 20000, Q: 0 },
+      filterEnvelope: { attack: 0.001, decay: 0.001, sustain: 1, release: 0.001, baseFrequency: 20000, octaves: 0, exponent: 1 },
+    }),
   }
 }
 
@@ -150,20 +146,15 @@ export const KIT_SHORT: Record<KitId, string> = {
 }
 
 // ─── SH-101 (1982) ──────────────────────────────────────────────────────────
-// 6 bass samples spaced every 4 semitones across C1–G#2
+// MonoSynth with portamento — sub oscillator managed separately in useAudioEngine
 function buildSH101(): Record<string, AnyToneSynth> {
   return {
-    sh101_bass: new Tone.Sampler({
-      urls: {
-        'C1':  'bass_01.wav',
-        'E1':  'bass_02.wav',
-        'G#1': 'bass_03.wav',
-        'C2':  'bass_04.wav',
-        'E2':  'bass_05.wav',
-        'G#2': 'bass_06.wav',
-      },
-      baseUrl: BASE + 'samples/sh101/',
-      release: 0.5,
+    sh101_bass: new Tone.MonoSynth({
+      oscillator: { type: 'pulse' },
+      envelope: { attack: 0.001, decay: 0.4, sustain: 0.1, release: 0.2 },
+      filter: { type: 'lowpass', frequency: 20000, Q: 0 },
+      filterEnvelope: { attack: 0.001, decay: 0.001, sustain: 1, release: 0.001, baseFrequency: 20000, octaves: 0, exponent: 1 },
+      portamento: 0,
     }),
   }
 }

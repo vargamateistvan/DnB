@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { Step, Track, TrackId, KitId, SequencerState, MachineParams } from '../types'
 import { DEFAULT_MACHINE_PARAMS, MACHINE_TRACKS } from '../machines'
 
@@ -134,6 +135,7 @@ let colorIdx = 0
 // ── Actions interface ──────────────────────────────────────────────────────────
 
 interface SequencerActions {
+  loadState: (partial: Partial<SequencerState>) => void
   toggleStep: (trackId: string, stepIndex: number) => void
   setStepVelocity: (trackId: string, stepIndex: number, velocity: number) => void
   setVolume: (trackId: string, volume: number) => void
@@ -158,7 +160,9 @@ interface SequencerActions {
 
 // ── Store ──────────────────────────────────────────────────────────────────────
 
-export const useSequencerStore = create<SequencerState & SequencerActions>((set, get) => ({
+export const useSequencerStore = create<SequencerState & SequencerActions>()(
+  persist(
+    (set, get) => ({
   tracks: DEFAULT_TRACKS,
   bpm: 174,
   swing: 0,
@@ -170,6 +174,8 @@ export const useSequencerStore = create<SequencerState & SequencerActions>((set,
   mutedKits: [],
   trackKits: {},
   machineParams: DEFAULT_MACHINE_PARAMS,
+
+  loadState: (partial) => set(partial),
 
   toggleStep: (trackId, stepIndex) =>
     set((state) => ({
@@ -317,4 +323,19 @@ export const useSequencerStore = create<SequencerState & SequencerActions>((set,
         }),
       }
     }),
-}))
+  }),
+  {
+    name: 'dnb-sequencer',
+    partialize: (state) => ({
+      tracks: state.tracks,
+      bpm: state.bpm,
+      swing: state.swing,
+      stepCount: state.stepCount,
+      kit: state.kit,
+      activeKits: state.activeKits,
+      mutedKits: state.mutedKits,
+      trackKits: state.trackKits,
+      machineParams: state.machineParams,
+    }),
+  }
+))

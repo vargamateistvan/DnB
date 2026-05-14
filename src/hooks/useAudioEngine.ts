@@ -3,10 +3,17 @@ import * as Tone from 'tone'
 import { useSequencerStore } from '../store/sequencerStore'
 import { buildKit } from '../kits'
 import type { AnyToneSynth } from '../kits'
-import type { SynthType } from '../types'
+import type { SynthType, MachineParams } from '../types'
 
 function isUnpitched(s: AnyToneSynth): s is Tone.NoiseSynth | Tone.MetalSynth {
   return s instanceof Tone.NoiseSynth || s instanceof Tone.MetalSynth
+}
+
+function noteOneOctaveDown(note: string): string {
+  const m = /^([A-G]#?)(-?\d+)$/.exec(note)
+  if (!m) return note
+  const oct = Number.parseInt(m[2]) - 1
+  return oct < 0 ? note : `${m[1]}${oct}`
 }
 
 const TRIGGER_NOTES: Record<string, string> = {
@@ -66,7 +73,34 @@ function buildCustomSynth(synthType: SynthType): AnyToneSynth {
   }
 }
 
-const BASE_TRACK_IDS: string[] = [
+function resolveAccentLevel(mp: MachineParams, trackId: string): number {
+  if (trackId.startsWith('tr808')) return mp.tr808.accentLevel
+  if (trackId.startsWith('tr909')) return mp.tr909.accentLevel
+  if (trackId.startsWith('tr606')) return mp.tr606.accentLevel
+  if (trackId.startsWith('tr707')) return mp.tr707.accentLevel
+  if (trackId.startsWith('tb303')) return mp.tb303.accent
+  return 0
+}
+
+function sweepBassFilter(filter: Tone.Filter, trackId: string, mp: MachineParams, time: number) {
+  if (trackId === 'tb303_bass') {
+    const p = mp.tb303
+    const base = Math.max(50, 100 + p.cutoff * 7900)
+    const peak = base * Math.pow(2, p.envMod * 5)
+    filter.frequency.cancelScheduledValues(time)
+    filter.frequency.setValueAtTime(peak, time)
+    filter.frequency.exponentialRampToValueAtTime(base, time + 0.05 + p.decay * 1.95)
+  } else if (trackId === 'sh101_bass') {
+    const p = mp.sh101
+    const base = Math.max(50, 80 + p.vcfFreq * 7920)
+    const peak = Math.min(base * Math.pow(2, p.vcfEnv * 3) * (1 + p.vcfMod * 2), 18000)
+    filter.frequency.cancelScheduledValues(time)
+    filter.frequency.setValueAtTime(peak, time)
+    filter.frequency.exponentialRampToValueAtTime(base, time + 0.25)
+  }
+}
+
+const BASE_TRACK_IDS = new Set([
   'tr808_kick','tr808_snare','tr808_hihat_closed','tr808_hihat_open','tr808_clap',
   'tr808_rim','tr808_tom_lo','tr808_tom_hi','tr808_cymbal','tr808_cowbell',
   'tr909_kick','tr909_snare','tr909_hihat_closed','tr909_hihat_open','tr909_clap',
@@ -76,11 +110,14 @@ const BASE_TRACK_IDS: string[] = [
   'tr707_kick','tr707_snare','tr707_hihat_closed','tr707_hihat_open','tr707_clap',
   'tr707_rim','tr707_tom_lo','tr707_tom_hi','tr707_cymbal',
   'tb303_bass','sh101_bass',
-]
+])
 
 export function useAudioEngine() {
   const synthsRef = useRef<Record<string, AnyToneSynth>>({})
   const channelsRef = useRef<Record<string, Tone.Channel>>({})
+  const filtersRef = useRef<Record<string, Tone.Filter>>({})
+  const subOscRef = useRef<Record<string, Tone.Synth>>({})
+  const subGainRef = useRef<Record<string, Tone.Gain>>({})
   const seqRef = useRef<Tone.Sequence | null>(null)
   const masterRef = useRef<Tone.Compressor | null>(null)
   const tapRef = useRef<Tone.Gain | null>(null)
@@ -112,9 +149,31 @@ export function useAudioEngine() {
         const ch = new Tone.Channel({ volume: 0 }).connect(master)
         channelsRef.current[id] = ch
         synthsRef.current[id] = synth
-        synth.connect(ch)
+        // Bass machines get a resonant lowpass filter inserted before the channel
+        if (id === 'tb303_bass' || id === 'sh101_bass') {
+          const filter = new Tone.Filter({ type: 'lowpass', rolloff: -24, frequency: 1200, Q: 8 })
+          filtersRef.current[id] = filter
+          synth.connect(filter)
+          filter.connect(ch)
+        } else {
+          synth.connect(ch)
+        }
       })
     })
+
+    // SH-101 sub oscillator — square wave, 1 octave below, routed through same filter
+    const sh101Filter = filtersRef.current['sh101_bass']
+    if (sh101Filter) {
+      const subOsc = new Tone.Synth({
+        oscillator: { type: 'square' },
+        envelope: { attack: 0.001, decay: 0.4, sustain: 0.1, release: 0.2 },
+      })
+      const subGain = new Tone.Gain(0)
+      subOsc.connect(subGain)
+      subGain.connect(sh101Filter)
+      subOscRef.current['sh101_bass'] = subOsc
+      subGainRef.current['sh101_bass'] = subGain
+    }
 
     return () => {
       master.dispose()
@@ -122,8 +181,14 @@ export function useAudioEngine() {
       reverb.dispose()
       Object.values(synthsRef.current).forEach((s) => { s.disconnect(); s.dispose() })
       Object.values(channelsRef.current).forEach((ch) => ch.dispose())
+      Object.values(filtersRef.current).forEach((f) => f.dispose())
+      Object.values(subOscRef.current).forEach((s) => { s.disconnect(); s.dispose() })
+      Object.values(subGainRef.current).forEach((g) => g.dispose())
       synthsRef.current = {}
       channelsRef.current = {}
+      filtersRef.current = {}
+      subOscRef.current = {}
+      subGainRef.current = {}
     }
   }, [])
 
@@ -147,7 +212,7 @@ export function useAudioEngine() {
     // Destroy synth + channel for removed tracks (skip base tracks)
     audioIds.forEach((id) => {
       if (storeIds.has(id)) return
-      if (BASE_TRACK_IDS.includes(id)) return
+      if (BASE_TRACK_IDS.has(id)) return
       synthsRef.current[id]?.disconnect()
       synthsRef.current[id]?.dispose()
       delete synthsRef.current[id]
@@ -156,27 +221,44 @@ export function useAudioEngine() {
     })
   }, [tracks])
 
-  // ── Machine params → TB-303 / SH-101 MonoSynths ──────────────────────────
+  // ── Machine params → filters + shuffle ───────────────────────────────────
   useEffect(() => {
-    const tb303 = synthsRef.current['tb303_bass']
-    if (tb303 instanceof Tone.MonoSynth) {
+    // TB-303 static filter (cutoff / resonance)
+    const tb303Filter = filtersRef.current['tb303_bass']
+    if (tb303Filter) {
       const p = machineParams.tb303
-      tb303.filter.frequency.value = 100 + p.cutoff * 7900
-      tb303.filter.Q.value = 1 + p.resonance * 19
-      tb303.filterEnvelope.octaves = p.envMod * 5
-      tb303.filterEnvelope.decay = 0.05 + p.decay * 1.95
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tb303.oscillator.type = p.waveform as any
+      tb303Filter.frequency.value = Math.max(50, 100 + p.cutoff * 7900)
+      tb303Filter.Q.value = 1 + p.resonance * 19
     }
-    const sh101 = synthsRef.current['sh101_bass']
-    if (sh101 instanceof Tone.MonoSynth) {
+    // SH-101 static filter (vcfFreq / vcfRes)
+    const sh101Filter = filtersRef.current['sh101_bass']
+    if (sh101Filter) {
       const p = machineParams.sh101
-      sh101.filter.frequency.value = 80 + p.vcfFreq * 7920
-      sh101.filter.Q.value = 1 + p.vcfRes * 11
-      sh101.filterEnvelope.octaves = p.vcfEnv * 3
-      sh101.portamento = p.portamento * 0.5
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sh101.oscillator.type = p.waveform as any
+      sh101Filter.frequency.value = Math.max(50, 80 + p.vcfFreq * 7920)
+      sh101Filter.Q.value = 1 + p.vcfRes * 11
+    }
+    // TB-303 waveform
+    const tb303Synth = synthsRef.current['tb303_bass']
+    if (tb303Synth instanceof Tone.MonoSynth) {
+      tb303Synth.oscillator.type = machineParams.tb303.waveform
+    }
+
+    // SH-101 waveform + portamento
+    const sh101Synth = synthsRef.current['sh101_bass']
+    if (sh101Synth instanceof Tone.MonoSynth) {
+      sh101Synth.oscillator.type = machineParams.sh101.waveform
+      sh101Synth.portamento = machineParams.sh101.portamento * 0.5
+    }
+
+    // SH-101 sub oscillator level
+    const subGain = subGainRef.current['sh101_bass']
+    if (subGain) subGain.gain.value = machineParams.sh101.subOsc
+
+    // TR-808 / TR-909 shuffle → transport swing
+    const shuffle = Math.max(machineParams.tr808.shuffle, machineParams.tr909.shuffle)
+    if (shuffle > 0) {
+      Tone.getTransport().swing = shuffle
+      Tone.getTransport().swingSubdivision = '16n'
     }
   }, [machineParams])
 
@@ -204,15 +286,32 @@ export function useAudioEngine() {
 
     seqRef.current = new Tone.Sequence(
       (time, step) => {
-        setCurrentStep(step as number)
+        setCurrentStep(step)
         const state = useSequencerStore.getState()
         state.tracks.forEach((track) => {
           if (track.muted) return
-          const s = track.steps[(step as number) % track.steps.length]
+          const s = track.steps[step % track.steps.length]
           if (!s?.active) return
           const synth = synthsRef.current[track.id]
           if (!synth) return
-          triggerSynth(synth, track.id, time, s.velocity, s.note)
+
+          const mp = state.machineParams
+          const accentLevel = resolveAccentLevel(mp, track.id)
+          const vel = s.velocity > 0.65
+            ? Math.min(1, s.velocity + accentLevel * 0.3)
+            : s.velocity
+
+          triggerSynth(synth, track.id, time, vel, s.note)
+
+          // SH-101 sub oscillator — trigger one octave below at subOsc level
+          if (track.id === 'sh101_bass' && mp.sh101.subOsc > 0) {
+            const subSynth = subOscRef.current['sh101_bass']
+            const subNote = noteOneOctaveDown(s.note ?? TRIGGER_NOTES['sh101_bass'] ?? 'C2')
+            subSynth?.triggerAttackRelease(subNote, '16n', time, Math.min(1, vel * mp.sh101.subOsc))
+          }
+
+          const filter = filtersRef.current[track.id]
+          if (filter) sweepBassFilter(filter, track.id, mp, time)
         })
       },
       steps,

@@ -113,19 +113,19 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
 
         {divider()}
 
-        {section('MOD',
-          <>{vfader(p.portamento, 'RATE', (v) => setMachineParam('sh101', 'portamento', v))}</>
-        )}
-
-        {section('SOURCE MIXER',
+        {section('SOURCE',
           <>
             <WaveToggle
               options={['~', '/']} values={['pulse', 'sawtooth']}
               current={p.waveform} accent={accent} labelColor={labelColor} border={theme.border}
               onChange={(w) => setMachineParam('sh101', 'waveform', w as 'pulse' | 'sawtooth')}
             />
-            {vfader(p.subOsc, 'SUB OSC', (v) => setMachineParam('sh101', 'subOsc', v))}
+            {vfader(p.subOsc, 'SUB', (v) => setMachineParam('sh101', 'subOsc', v))}
           </>
+        )}
+
+        {section('MOD',
+          <>{vfader(p.portamento, 'RATE', (v) => setMachineParam('sh101', 'portamento', v))}</>
         )}
 
         {section('VCF',
@@ -191,7 +191,6 @@ export function MachineControls({ kitId }: { readonly kitId?: KitId }) {
 
           <div className="w-px self-stretch opacity-30" style={{ background: panelBorder }} />
 
-          {/* WAVEFORM */}
           <div className="flex flex-col items-center gap-2">
             <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: panelLabel }}>WAVEFORM</span>
             <WaveToggle
@@ -437,7 +436,7 @@ function WaveToggle({ options, values, current, accent, labelColor, border, onCh
         ))}
       </div>
       <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: labelColor }}>
-        WAVEFORM
+        WAVE
       </span>
     </div>
   )
