@@ -12,8 +12,8 @@ const ROW_H = 40 // px — row height (taller for easier note targeting)
 const GAP = 2    // px — gap between cells
 const GRP = 6    // px — gap between beat groups
 
-// TB-303 triangle clip-path (upward-pointing ▲)
-const TRIANGLE = 'polygon(50% 0%, 0% 100%, 100% 100%)'
+// TB-303 triangle clip-path (upward-pointing ▲, equilateral proportions in 28×40 container)
+const TRIANGLE = 'polygon(50% 39%, 0% 100%, 100% 100%)'
 
 const KIT_NAMES: Record<KitId, string> = {
   sh101: 'SH-101', tb303: 'TB-303', tr808: 'TR-808',

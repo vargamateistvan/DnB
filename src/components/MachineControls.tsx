@@ -49,7 +49,7 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
     )
   })
 
-  // ── SH-101 — vertical faders matching real hardware layout ──────────────────
+  // ── SH-101 ──────────────────────────────────────────────────────────────────
   if (kit === 'sh101') {
     const p = params.sh101
     const bassTrack = tracks.find((t) => t.id === 'sh101_bass')
@@ -63,62 +63,83 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
           <input
             type="range" min={0} max={1} step={0.01} value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="h-14 cursor-pointer"
-            style={{ writingMode: 'vertical-lr', direction: 'rtl', accentColor: accent }}
+            style={{
+              writingMode: 'vertical-lr',
+              direction: 'rtl',
+              accentColor: accent,
+              height: '56px',
+              cursor: 'pointer',
+            }}
           />
-          <span className="font-mono text-[8px] font-bold uppercase text-center" style={{ color: labelColor, maxWidth: '32px', lineHeight: 1.1 }}>
+          <span
+            className="font-mono text-[8px] font-bold uppercase text-center"
+            style={{ color: labelColor, maxWidth: '34px', lineHeight: 1.1 }}
+          >
             {label}
           </span>
         </div>
       )
     }
 
-    function section(title: string, children: ReactNode) {
+    function sh101Section(title: string, children: ReactNode) {
       return (
-        <div className="flex flex-col items-center gap-1 px-3 py-2" style={{ border: `1px solid ${theme.border}`, borderRadius: '3px' }}>
-          <span className="font-mono text-[8px] uppercase tracking-widest mb-1" style={{ color: labelColor }}>{title}</span>
+        <div
+          className="flex flex-col items-center gap-1.5 px-3 py-2 shrink-0"
+          style={{ border: `1px solid ${theme.border}`, borderRadius: '3px', background: 'rgba(0,0,0,0.15)' }}
+        >
+          <span
+            className="font-mono text-[8px] uppercase tracking-widest"
+            style={{ color: accent, opacity: 0.6 }}
+          >
+            {title}
+          </span>
           <div className="flex items-end gap-3">{children}</div>
         </div>
       )
     }
 
     return (
-      <div
-        className="shrink-0 flex items-center gap-3 px-4 py-2 border-t flex-wrap"
-        style={{ background: theme.panel, borderColor: theme.border }}
-      >
-        <div className="flex flex-col gap-1 self-center">
-          {bassTrack && knob(bassTrack.volume, 'LEVEL', 36, (v) => setVolume('sh101_bass', v))}
+      <div className="shrink-0 border-t overflow-x-auto" style={{ background: theme.panel, borderColor: theme.border }}>
+        <div className="flex items-end gap-4 px-5 py-3" style={{ minWidth: 'max-content' }}>
+
+          {/* Level knob */}
+          <div className="shrink-0 pb-1">
+            {bassTrack && knob(bassTrack.volume, 'LEVEL', 36, (v) => setVolume('sh101_bass', v))}
+          </div>
+
+          <div className="self-stretch w-px opacity-30" style={{ background: theme.border }} />
+
+          {/* SOURCE: waveform + sub osc */}
+          {sh101Section('SOURCE',
+            <>
+              <WaveToggle
+                options={['PUL', 'SAW']} values={['pulse', 'sawtooth']}
+                current={p.waveform} accent={accent} labelColor={labelColor} border={theme.border}
+                onChange={(w) => setMachineParam('sh101', 'waveform', w as 'pulse' | 'sawtooth')}
+              />
+              {vfader(p.subOsc, 'SUB', (v) => setMachineParam('sh101', 'subOsc', v))}
+            </>
+          )}
+
+          {/* PORTAMENTO */}
+          {sh101Section('PORTA',
+            <>{vfader(p.portamento, 'RATE', (v) => setMachineParam('sh101', 'portamento', v))}</>
+          )}
+
+          {/* VCF */}
+          {sh101Section('VCF',
+            <>
+              {vfader(p.vcfFreq, 'FREQ', (v) => setMachineParam('sh101', 'vcfFreq', v))}
+              {vfader(p.vcfRes,  'RES',  (v) => setMachineParam('sh101', 'vcfRes',  v))}
+              {vfader(p.vcfEnv,  'ENV',  (v) => setMachineParam('sh101', 'vcfEnv',  v))}
+              {vfader(p.vcfMod,  'MOD',  (v) => setMachineParam('sh101', 'vcfMod',  v))}
+            </>
+          )}
+
+          <div className="self-stretch w-px opacity-30" style={{ background: theme.border }} />
+
+          <PresetBar kitId="sh101" accent={accent} border={theme.border} labelColor={labelColor} onPlay={onPlay} onStop={onStop} />
         </div>
-
-        {divider()}
-
-        {section('SOURCE',
-          <>
-            <WaveToggle
-              options={['~', '/']} values={['pulse', 'sawtooth']}
-              current={p.waveform} accent={accent} labelColor={labelColor} border={theme.border}
-              onChange={(w) => setMachineParam('sh101', 'waveform', w as 'pulse' | 'sawtooth')}
-            />
-            {vfader(p.subOsc, 'SUB', (v) => setMachineParam('sh101', 'subOsc', v))}
-          </>
-        )}
-
-        {section('MOD',
-          <>{vfader(p.portamento, 'RATE', (v) => setMachineParam('sh101', 'portamento', v))}</>
-        )}
-
-        {section('VCF',
-          <>
-            {vfader(p.vcfFreq, 'FREQ', (v) => setMachineParam('sh101', 'vcfFreq', v))}
-            {vfader(p.vcfRes,  'RES',  (v) => setMachineParam('sh101', 'vcfRes',  v))}
-            {vfader(p.vcfEnv,  'ENV',  (v) => setMachineParam('sh101', 'vcfEnv',  v))}
-            {vfader(p.vcfMod,  'MOD',  (v) => setMachineParam('sh101', 'vcfMod',  v))}
-          </>
-        )}
-
-        {divider()}
-        <PresetBar kitId="sh101" accent={accent} border={theme.border} labelColor={labelColor} onPlay={onPlay} onStop={onStop} />
       </div>
     )
   }
@@ -462,6 +483,7 @@ function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: Preset
   return (
     <div
       className="flex flex-col gap-1.5 shrink-0"
+      style={{ marginLeft: 'auto' }}
       onMouseEnter={handleContainerEnter}
       onMouseLeave={handleContainerLeave}
     >

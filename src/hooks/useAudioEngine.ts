@@ -28,16 +28,18 @@ function triggerSynth(synth: AnyToneSynth, trackId: string, time: number, veloci
   if (synth instanceof Tone.Player) {
     if (!synth.loaded) return
     synth.volume.value = Tone.gainToDb(Math.max(0.0001, velocity))
-    synth.start(time)
+    try { synth.start(time) } catch { /* timing error after transport restart — skip beat */ }
     return
   }
   if (synth instanceof Tone.Sampler && !synth.loaded) return
   const note = stepNote ?? TRIGGER_NOTES[trackId] ?? 'C2'
-  if (isUnpitched(synth)) {
-    synth.triggerAttackRelease('16n', time, velocity)
-  } else {
-    synth.triggerAttackRelease(note, '16n', time, velocity)
-  }
+  try {
+    if (isUnpitched(synth)) {
+      synth.triggerAttackRelease('16n', time, velocity)
+    } else {
+      synth.triggerAttackRelease(note, '16n', time, velocity)
+    }
+  } catch { /* timing error after transport restart — skip beat */ }
 }
 
 function buildCustomSynth(synthType: SynthType): AnyToneSynth {
@@ -307,7 +309,7 @@ export function useAudioEngine() {
           if (track.id === 'sh101_bass' && mp.sh101.subOsc > 0) {
             const subSynth = subOscRef.current['sh101_bass']
             const subNote = noteOneOctaveDown(s.note ?? TRIGGER_NOTES['sh101_bass'] ?? 'C2')
-            subSynth?.triggerAttackRelease(subNote, '16n', time, Math.min(1, vel * mp.sh101.subOsc))
+            try { subSynth?.triggerAttackRelease(subNote, '16n', time, Math.min(1, vel * mp.sh101.subOsc)) } catch { /* skip */ }
           }
 
           const filter = filtersRef.current[track.id]
