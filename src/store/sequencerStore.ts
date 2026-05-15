@@ -159,15 +159,18 @@ interface SequencerActions {
   setCurrentStep: (step: number) => void
   setKit: (kit: KitId) => void
   toggleKit: (kit: KitId) => void
+  reorderKit: (draggedId: KitId, targetId: KitId) => void
   toggleMachineKitMute: (kit: KitId) => void
   setTrackKit: (trackId: string, kit: KitId | null) => void
   setMachineParam: <K extends KitId>(kitId: K, key: keyof MachineParams[K], value: MachineParams[K][keyof MachineParams[K]]) => void
   setStepNote: (trackId: string, stepIndex: number, note: string) => void
   addTrack: (afterId: string) => void
   removeTrack: (id: string) => void
+  reorderTrack: (draggedId: string, targetId: string) => void
   loadPreset: (preset: 'amen' | 'clear') => void
   loadMachinePreset: (kitId: KitId, preset: MachinePreset) => void
   randomize: (kitId?: KitId) => void
+  setActivePreset: (kitId: KitId, index: number | null) => void
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────────
@@ -186,6 +189,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
   mutedKits: [],
   trackKits: {},
   machineParams: DEFAULT_MACHINE_PARAMS,
+  activePresets: {},
 
   loadState: (partial) => set(partial),
 
@@ -227,6 +231,18 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
         return { activeKits: next, kit: next[0] }
       }
       return { activeKits: [...state.activeKits, kit] }
+    }),
+
+  reorderKit: (draggedId, targetId) =>
+    set((state) => {
+      if (draggedId === targetId) return {}
+      const from = state.activeKits.indexOf(draggedId)
+      const to   = state.activeKits.indexOf(targetId)
+      if (from === -1 || to === -1) return {}
+      const next = [...state.activeKits]
+      next.splice(from, 1)
+      next.splice(to, 0, draggedId)
+      return { activeKits: next }
     }),
 
   toggleMachineKitMute: (kit) =>
@@ -309,6 +325,21 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
 
   removeTrack: (id) =>
     set((state) => ({ tracks: state.tracks.filter((t) => t.id !== id) })),
+
+  reorderTrack: (draggedId, targetId) =>
+    set((state) => {
+      if (draggedId === targetId) return {}
+      const from = state.tracks.findIndex((t) => t.id === draggedId)
+      const to   = state.tracks.findIndex((t) => t.id === targetId)
+      if (from === -1 || to === -1) return {}
+      const next = [...state.tracks]
+      const [item] = next.splice(from, 1)
+      next.splice(to, 0, item)
+      return { tracks: next }
+    }),
+
+  setActivePreset: (kitId, index) =>
+    set((state) => ({ activePresets: { ...state.activePresets, [kitId]: index } })),
 
   loadPreset: (preset) =>
     set((state) => {

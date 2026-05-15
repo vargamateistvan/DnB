@@ -25,7 +25,12 @@ export interface Track {
 // ── Machine parameter types ───────────────────────────────────────────────────
 
 export interface TR808Params { shuffle: number; accentLevel: number }
-export interface TR909Params { shuffle: number; accentLevel: number }
+export interface TR909Params {
+  shuffle: number; accentLevel: number
+  bdDecay: number; sdSnappy: number
+  ltDecay: number; htDecay: number
+  ohDecay: number; cymTune: number
+}
 export interface TR606Params { accentLevel: number }
 export interface TR707Params { accentLevel: number }
 export interface TB303Params {
@@ -44,6 +49,7 @@ export interface SH101Params {
   subOsc: number
   waveform: 'pulse' | 'sawtooth'
   portamento: number
+  pitchBend: number  // -1 to 1, maps to ±12 semitones
 }
 
 export interface MachineParams {
@@ -67,4 +73,5 @@ export interface SequencerState {
   mutedKits: KitId[]
   trackKits: Partial<Record<string, KitId>>
   machineParams: MachineParams
+  activePresets: Partial<Record<KitId, number | null>>
 }

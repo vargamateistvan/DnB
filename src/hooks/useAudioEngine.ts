@@ -118,11 +118,15 @@ export function useAudioEngine() {
   const synthsRef = useRef<Record<string, AnyToneSynth>>({})
   const channelsRef = useRef<Record<string, Tone.Channel>>({})
   const filtersRef = useRef<Record<string, Tone.Filter>>({})
+  const ampEnvsRef = useRef<Record<string, Tone.AmplitudeEnvelope>>({})
   const subOscRef = useRef<Record<string, Tone.Synth>>({})
   const subGainRef = useRef<Record<string, Tone.Gain>>({})
   const seqRef = useRef<Tone.Sequence | null>(null)
   const masterRef = useRef<Tone.Compressor | null>(null)
   const tapRef = useRef<Tone.Gain | null>(null)
+
+  // TR-909 tracks that get an AmplitudeEnvelope node for decay control
+  const TR909_AMP_IDS = new Set(['tr909_kick','tr909_snare','tr909_tom_lo','tr909_tom_hi','tr909_hihat_open'])
 
   const tracks = useSequencerStore((s) => s.tracks)
   const bpm = useSequencerStore((s) => s.bpm)
@@ -157,6 +161,11 @@ export function useAudioEngine() {
           filtersRef.current[id] = filter
           synth.connect(filter)
           filter.connect(ch)
+        } else if (TR909_AMP_IDS.has(id)) {
+          const ampEnv = new Tone.AmplitudeEnvelope({ attack: 0.001, decay: 0.5, sustain: 0, release: 0.01 })
+          ampEnvsRef.current[id] = ampEnv
+          synth.connect(ampEnv)
+          ampEnv.connect(ch)
         } else {
           synth.connect(ch)
         }
@@ -245,16 +254,32 @@ export function useAudioEngine() {
       tb303Synth.oscillator.type = machineParams.tb303.waveform
     }
 
-    // SH-101 waveform + portamento
+    // SH-101 waveform + portamento + pitch bend
     const sh101Synth = synthsRef.current['sh101_bass']
     if (sh101Synth instanceof Tone.MonoSynth) {
       sh101Synth.oscillator.type = machineParams.sh101.waveform
       sh101Synth.portamento = machineParams.sh101.portamento * 0.5
+      sh101Synth.detune.value = (machineParams.sh101.pitchBend ?? 0) * 1200
     }
 
     // SH-101 sub oscillator level
     const subGain = subGainRef.current['sh101_bass']
     if (subGain) subGain.gain.value = machineParams.sh101.subOsc
+
+    // TR-909 per-instrument decay via AmplitudeEnvelope
+    const p909 = machineParams.tr909
+    const setAmpDecay = (id: string, sec: number) => {
+      if (!Number.isFinite(sec)) return
+      const e = ampEnvsRef.current[id]; if (e) e.decay = sec
+    }
+    setAmpDecay('tr909_kick',        0.08 + (p909.bdDecay  ?? 0.4)  * 1.2)
+    setAmpDecay('tr909_snare',       0.02 + (p909.sdSnappy ?? 0.5)  * 0.35)
+    setAmpDecay('tr909_tom_lo',      0.08 + (p909.ltDecay  ?? 0.4)  * 0.9)
+    setAmpDecay('tr909_tom_hi',      0.06 + (p909.htDecay  ?? 0.4)  * 0.7)
+    setAmpDecay('tr909_hihat_open',  0.04 + (p909.ohDecay  ?? 0.6)  * 1.8)
+    // Cymbal tune via Player playbackRate
+    const cym909 = synthsRef.current['tr909_cymbal']
+    if (cym909 instanceof Tone.Player) cym909.playbackRate = 0.6 + p909.cymTune * 1.2
 
     // TR-808 / TR-909 shuffle → transport swing
     const shuffle = Math.max(machineParams.tr808.shuffle, machineParams.tr909.shuffle)
@@ -304,6 +329,10 @@ export function useAudioEngine() {
             : s.velocity
 
           triggerSynth(synth, track.id, time, vel, s.note)
+
+          // TR-909 amplitude envelope — shapes sample decay
+          const ampEnv = ampEnvsRef.current[track.id]
+          if (ampEnv) try { ampEnv.triggerAttackRelease('2n', time) } catch { /* skip */ }
 
           // SH-101 sub oscillator — trigger one octave below at subOsc level
           if (track.id === 'sh101_bass' && mp.sh101.subOsc > 0) {

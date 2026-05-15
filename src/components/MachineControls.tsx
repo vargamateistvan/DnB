@@ -1,9 +1,107 @@
-import { type ReactNode, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import { KnobControl } from './KnobControl'
 import { MACHINE_PRESETS } from '../presets'
 import type { KitId } from '../types'
+
+// ── Bender ────────────────────────────────────────────────────────────────────
+
+interface BenderProps {
+  readonly value: number   // -1 … 1
+  readonly accent: string
+  readonly border: string
+  readonly onChange: (v: number) => void
+  readonly onRelease: () => void
+}
+
+function Bender({ value, accent, border, onChange, onRelease }: BenderProps) {
+  const trackRef  = useRef<HTMLDivElement>(null)
+  const dragging  = useRef(false)
+
+  const TRACK_H = 80  // px
+
+  const toValue = useCallback((clientY: number) => {
+    if (!trackRef.current) return 0
+    const rect = trackRef.current.getBoundingClientRect()
+    const rel  = (clientY - rect.top) / rect.height  // 0 = top, 1 = bottom
+    return Math.max(-1, Math.min(1, 1 - rel * 2))     // 1 at top, -1 at bottom
+  }, [])
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (dragging.current) onChange(toValue(e.clientY))
+  }, [onChange, toValue])
+
+  const onMouseUp = useCallback(() => {
+    if (!dragging.current) return
+    dragging.current = false
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+    onRelease()
+  }, [onMouseMove, onRelease])
+
+  useEffect(() => () => {
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+  }, [onMouseMove, onMouseUp])
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    dragging.current = true
+    onChange(toValue(e.clientY))
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }
+
+  // Handle y-position: value=1 → 0%, value=0 → 50%, value=-1 → 100%
+  const handleY = ((1 - value) / 2) * (TRACK_H - 18)  // px from top (handle h=18)
+
+  return (
+    <div className="flex flex-col items-center gap-1 shrink-0">
+      <span className="font-mono text-[8px] tabular-nums" style={{ color: accent, opacity: 0.7 }}>
+        {value > 0 ? `+${Math.round(value * 12)}` : Math.round(value * 12)}
+      </span>
+      <div
+        ref={trackRef}
+        className="relative select-none"
+        style={{
+          width: '22px', height: `${TRACK_H}px`,
+          background: 'rgba(0,0,0,0.35)',
+          border: `1px solid ${border}`,
+          borderRadius: '4px',
+          cursor: 'ns-resize',
+        }}
+        onMouseDown={handleMouseDown}
+      >
+        {/* Center groove */}
+        <div className="absolute inset-x-0" style={{ top: '50%', height: '1px', background: `${accent}55` }} />
+        {/* Fill between center and handle */}
+        {value !== 0 && (
+          <div className="absolute inset-x-1" style={{
+            background: `${accent}40`,
+            borderRadius: '2px',
+            ...(value > 0
+              ? { bottom: '50%', height: `${value * 50}%` }
+              : { top: '50%',   height: `${-value * 50}%` }),
+          }} />
+        )}
+        {/* Grip handle */}
+        <div
+          className="absolute inset-x-0.5"
+          style={{
+            height: '18px',
+            top: `${handleY}px`,
+            background: accent,
+            borderRadius: '3px',
+            boxShadow: value !== 0 ? `0 0 8px ${accent}88` : 'none',
+            transition: dragging.current ? 'none' : 'top 120ms ease, box-shadow 80ms',
+          }}
+        />
+      </div>
+      <span className="font-mono text-[8px] font-bold uppercase" style={{ color: accent, opacity: 0.6 }}>BEND</span>
+    </div>
+  )
+}
 
 
 export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: KitId; readonly onPlay?: () => void; readonly onStop?: () => void }) {
@@ -106,6 +204,15 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
           <div className="shrink-0 pb-1">
             {bassTrack && knob(bassTrack.volume, 'LEVEL', 36, (v) => setVolume('sh101_bass', v))}
           </div>
+
+          {/* Pitch bender */}
+          <Bender
+            value={p.pitchBend ?? 0}
+            accent={accent}
+            border={theme.border}
+            onChange={(v) => setMachineParam('sh101', 'pitchBend', v)}
+            onRelease={() => setMachineParam('sh101', 'pitchBend', 0)}
+          />
 
           <div className="self-stretch w-px opacity-30" style={{ background: theme.border }} />
 
@@ -239,55 +346,63 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
     const knobTrack = '#88888880'
     const knobBody = '#888884'
 
+    function col(header: string, topKnob: ReactNode, botKnob?: ReactNode) {
+      return (
+        <div key={header} className="flex flex-col items-center gap-1" style={{ border: `1px solid ${panelBorder}`, borderRadius: '2px', padding: '4px 6px', background: 'rgba(0,0,0,0.06)' }}>
+          <span className="font-mono font-bold uppercase select-none text-center leading-tight" style={{ fontSize: '8px', color: panelAccent, letterSpacing: '0.04em', minWidth: '52px' }}>{header}</span>
+          {topKnob}
+          {botKnob ?? <div style={{ height: '52px' }} />}
+        </div>
+      )
+    }
+
+    function k909(value: number, label: string, onChange: (v: number) => void) {
+      return <KnobControl value={value} label={label} color={panelAccent} trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel} size={36} onChange={onChange} />
+    }
+
+    const bdTrack  = tracks.find((t) => t.id === 'tr909_kick')
+    const sdTrack  = tracks.find((t) => t.id === 'tr909_snare')
+    const ltTrack  = tracks.find((t) => t.id === 'tr909_tom_lo')
+    const htTrack  = tracks.find((t) => t.id === 'tr909_tom_hi')
+    const rimTrack = tracks.find((t) => t.id === 'tr909_rim')
+    const clapTrack= tracks.find((t) => t.id === 'tr909_clap')
+    const chTrack  = tracks.find((t) => t.id === 'tr909_hihat_closed')
+    const ohTrack  = tracks.find((t) => t.id === 'tr909_hihat_open')
+    const cymTrack = tracks.find((t) => t.id === 'tr909_cymbal')
+
     return (
       <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>
         <div style={{ minWidth: 'max-content' }}>
-        {/* Orange step number strip */}
-        <div className="flex px-6" style={{ background: panelAccent }}>
+        {/* Step number strip */}
+        <div className="flex px-4" style={{ background: panelAccent }}>
           {Array.from({ length: 16 }, (_, i) => (
-            <div
-              key={i}
-              className="flex-1 text-center font-mono font-bold select-none"
-              style={{ fontSize: '10px', color: '#fff', padding: '2px 0' }}
-            >
-              {i + 1}
-            </div>
+            <div key={i} className="flex-1 text-center font-mono font-bold select-none" style={{ fontSize: '10px', color: '#fff', padding: '2px 0' }}>{i + 1}</div>
           ))}
         </div>
 
-        <div className="flex items-end gap-3 px-6 py-3">
-          {MACHINE_TRACKS.tr909.map((trackDef) => {
-            const track = tracks.find((t) => t.id === trackDef.id)
-            if (!track) return null
-            return (
-              <div key={trackDef.id}>
-                <KnobControl
-                  value={track.volume} label={trackDef.label} color={panelAccent}
-                  trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel}
-                  size={36} onChange={(v) => setVolume(track.id, v)}
-                />
-              </div>
-            )
-          })}
+        <div className="flex items-start gap-2 px-4 py-3">
+          {bdTrack  && col('BASS DRUM',  k909(bdTrack.volume,  'LEVEL', (v) => setVolume('tr909_kick',  v)), k909(p.bdDecay  ?? 0.4, 'DECAY',  (v) => setMachineParam('tr909','bdDecay',  v)))}
+          {sdTrack  && col('SNARE DRUM', k909(sdTrack.volume,  'LEVEL', (v) => setVolume('tr909_snare', v)), k909(p.sdSnappy ?? 0.5, 'SNAPPY', (v) => setMachineParam('tr909','sdSnappy', v)))}
+          {ltTrack  && col('LOW TOM',    k909(ltTrack.volume,  'LEVEL', (v) => setVolume('tr909_tom_lo',v)), k909(p.ltDecay  ?? 0.4, 'DECAY',  (v) => setMachineParam('tr909','ltDecay',  v)))}
+          {htTrack  && col('HIGH TOM',   k909(htTrack.volume,  'LEVEL', (v) => setVolume('tr909_tom_hi',v)), k909(p.htDecay  ?? 0.4, 'DECAY',  (v) => setMachineParam('tr909','htDecay',  v)))}
+          {rimTrack && col('RIM',        k909(rimTrack.volume, 'LEVEL', (v) => setVolume('tr909_rim',   v)))}
+          {clapTrack&& col('CLAP',       k909(clapTrack.volume,'LEVEL', (v) => setVolume('tr909_clap',  v)))}
+          {chTrack  && col('CLS/HH',     k909(chTrack.volume,  'LEVEL', (v) => setVolume('tr909_hihat_closed', v)))}
+          {ohTrack  && col('OPN/HH',     k909(ohTrack.volume,  'LEVEL', (v) => setVolume('tr909_hihat_open',   v)), k909(p.ohDecay ?? 0.6, 'OH DEC', (v) => setMachineParam('tr909','ohDecay', v)))}
+          {cymTrack && col('CYMBAL',     k909(cymTrack.volume, 'LEVEL', (v) => setVolume('tr909_cymbal', v)), k909(p.cymTune ?? 0.5, 'TUNE',   (v) => setMachineParam('tr909','cymTune', v)))}
 
-          <div className="w-px self-stretch opacity-40" style={{ background: panelBorder }} />
+          <div className="w-px self-stretch opacity-40 mx-1" style={{ background: panelBorder }} />
 
-          <KnobControl
-            value={p.accentLevel} label="ACCENT" color={panelAccent}
-            trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel}
-            size={44} onChange={(v) => setMachineParam('tr909', 'accentLevel', v)}
-          />
-          <KnobControl
-            value={p.shuffle} label="SHUFFLE" color={panelAccent}
-            trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel}
-            size={44} onChange={(v) => setMachineParam('tr909', 'shuffle', v)}
-          />
+          <div className="flex flex-col gap-2 items-center">
+            {k909(p.accentLevel, 'ACCENT',  (v) => setMachineParam('tr909','accentLevel', v))}
+            {k909(p.shuffle,     'SHUFFLE', (v) => setMachineParam('tr909','shuffle',     v))}
+          </div>
 
-          <div className="w-px self-stretch opacity-40" style={{ background: panelBorder }} />
+          <div className="w-px self-stretch opacity-40 mx-1" style={{ background: panelBorder }} />
 
           <PresetBar kitId="tr909" accent={panelAccent} border={panelBorder} labelColor={panelLabel} onPlay={onPlay} onStop={onStop} />
         </div>
-        </div>{/* end min-width wrapper */}
+        </div>
       </div>
     )
   }
@@ -305,15 +420,21 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
     return (
       <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>
         <div className="flex items-end gap-4 px-6 py-3" style={{ minWidth: 'max-content' }}>
-          {MACHINE_TRACKS.tr606.map((trackDef) => {
-            const track = tracks.find((t) => t.id === trackDef.id)
+          {([
+            { id: 'tr606_kick',         label: 'Bass Drum'   },
+            { id: 'tr606_snare',        label: 'Snare Drum'  },
+            { id: 'tr606_tom_lo',       label: 'L.H.Tom'     },
+            { id: 'tr606_cymbal',       label: 'CYmbal'      },
+            { id: 'tr606_hihat_open',   label: 'O.C.Hihat'   },
+          ] as const).map(({ id, label }) => {
+            const track = tracks.find((t) => t.id === id)
             if (!track) return null
             return (
-              <div key={trackDef.id}>
+              <div key={id}>
                 <KnobControl
-                  value={track.volume} label={trackDef.label} color={panelAccent}
+                  value={track.volume} label={label} color={panelAccent}
                   trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel}
-                  size={36} onChange={(v) => setVolume(track.id, v)}
+                  size={40} onChange={(v) => setVolume(id, v)}
                 />
               </div>
             )
@@ -362,35 +483,47 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
         </div>
 
         <div className="flex items-end gap-3 px-6 py-3">
+          {/* AC (Accent) fader */}
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-mono text-[9px] tabular-nums" style={{ color: panelLabel }}>{Math.round(p.accentLevel * 100)}</span>
+            <input type="range" min={0} max={1} step={0.01} value={p.accentLevel}
+              onChange={(e) => setMachineParam('tr707','accentLevel', Number(e.target.value))}
+              className="h-16" style={{ writingMode: 'vertical-lr', direction: 'rtl', accentColor: panelAccent, cursor: 'pointer' }}
+            />
+            <span className="font-mono text-[9px] font-bold" style={{ color: panelAccent }}>AC</span>
+          </div>
+
+          <div className="w-px self-stretch opacity-40" style={{ background: panelBorder }} />
+
           {/* Per-instrument faders */}
-          {MACHINE_TRACKS.tr707.map((trackDef) => {
-            const track = tracks.find((t) => t.id === trackDef.id)
+          {([
+            { id: 'tr707_kick',         label: 'BD'      },
+            { id: 'tr707_snare',        label: 'SD'      },
+            { id: 'tr707_tom_lo',       label: 'LT'      },
+            { id: 'tr707_tom_hi',       label: 'HT'      },
+            { id: 'tr707_rim',          label: 'RIM/COW' },
+            { id: 'tr707_clap',         label: 'TAMB'    },
+            { id: 'tr707_hihat_closed', label: 'CLS/HH'  },
+            { id: 'tr707_hihat_open',   label: 'OPN/HH'  },
+            { id: 'tr707_cymbal',       label: 'RIDE'    },
+          ] as const).map(({ id, label }) => {
+            const track = tracks.find((t) => t.id === id)
             if (!track) return null
             return (
-              <div key={trackDef.id} className="flex flex-col items-center gap-1">
+              <div key={id} className="flex flex-col items-center gap-1">
                 <span className="font-mono text-[9px] tabular-nums" style={{ color: panelLabel }}>
                   {Math.round(track.volume * 100)}
                 </span>
                 <input
                   type="range" min={0} max={1} step={0.01} value={track.volume}
-                  onChange={(e) => setVolume(track.id, Number(e.target.value))}
+                  onChange={(e) => setVolume(id, Number(e.target.value))}
                   className="h-16"
                   style={{ writingMode: 'vertical-lr', direction: 'rtl', accentColor: panelAccent, cursor: 'pointer' }}
                 />
-                <span className="font-mono text-[9px] font-bold" style={{ color: panelLabel }}>
-                  {trackDef.label}
-                </span>
+                <span className="font-mono text-[9px] font-bold" style={{ color: panelLabel }}>{label}</span>
               </div>
             )
           })}
-
-          <div className="w-px self-stretch opacity-40" style={{ background: panelBorder }} />
-
-          <KnobControl
-            value={p.accentLevel} label="ACCENT" color={panelAccent}
-            trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel}
-            size={44} onChange={(v) => setMachineParam('tr707', 'accentLevel', v)}
-          />
 
           <div className="w-px self-stretch opacity-40" style={{ background: panelBorder }} />
 
@@ -423,6 +556,8 @@ type SavedPreviewState = {
 function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: PresetBarProps) {
   const loadMachinePreset = useSequencerStore((s) => s.loadMachinePreset)
   const loadState         = useSequencerStore((s) => s.loadState)
+  const setActivePreset   = useSequencerStore((s) => s.setActivePreset)
+  const activePresetIdx   = useSequencerStore((s) => s.activePresets[kitId] ?? null)
   const presets    = MACHINE_PRESETS[kitId]
   const accentText = accent === '#fff' ? '#000' : '#fff'
 
@@ -495,12 +630,13 @@ function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: Preset
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2px' }}>
         {presets.map((preset, i) => {
           const active = hoveredIdx === i
+          const isCommitted = activePresetIdx === i
           return (
             <button
               key={preset.name}
               onMouseEnter={() => { setHoveredIdx(i); loadMachinePreset(kitId, preset) }}
               onMouseLeave={() => setHoveredIdx(null)}
-              onClick={() => { committedRef.current = true }}
+              onClick={() => { committedRef.current = true; setActivePreset(kitId, i) }}
               className="font-mono font-bold select-none uppercase text-left"
               style={{
                 padding: '3px 7px',
@@ -508,10 +644,10 @@ function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: Preset
                 letterSpacing: '0.04em',
                 cursor: 'pointer',
                 borderRadius: '2px',
-                border: `1px solid ${active ? accent : border}`,
-                background: active ? accent : 'transparent',
-                color: active ? accentText : labelColor,
-                boxShadow: active ? `0 0 8px ${accent}88` : 'none',
+                border: `1px solid ${active ? accent : isCommitted ? accent : border}`,
+                background: active ? accent : isCommitted ? `${accent}28` : 'transparent',
+                color: active ? accentText : isCommitted ? accent : labelColor,
+                boxShadow: active ? `0 0 8px ${accent}88` : isCommitted ? `0 0 4px ${accent}55` : 'none',
                 transition: 'background 80ms, color 80ms, border-color 80ms, box-shadow 80ms',
                 whiteSpace: 'nowrap',
               }}

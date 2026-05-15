@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type React from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, isBassLine } from '../machines'
 import { MachineControls } from './MachineControls'
@@ -121,9 +122,15 @@ interface Props {
   readonly onPadTrigger: (trackId: string) => void
   readonly onPlay: () => void
   readonly onStop: () => void
+  readonly isDragOver?: boolean
+  readonly onMachineDragStart?: () => void
+  readonly onMachineDragOver?: (e: React.DragEvent) => void
+  readonly onMachineDragLeave?: () => void
+  readonly onMachineDrop?: () => void
+  readonly onMachineDragEnd?: () => void
 }
 
-export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop }: Props) {
+export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop, isDragOver, onMachineDragStart, onMachineDragOver, onMachineDragLeave, onMachineDrop, onMachineDragEnd }: Props) {
   const mutedKits = useSequencerStore((s) => s.mutedKits)
   const toggleMachineKitMute = useSequencerStore((s) => s.toggleMachineKitMute)
   const theme = MACHINE_THEMES[kitId]
@@ -134,13 +141,23 @@ export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop }: Props) {
   return (
     <div
       className="flex flex-col shrink-0 border-b"
-      style={{ borderColor: theme.border, opacity: isMuted ? 0.45 : 1 }}
+      draggable
+      onDragStart={onMachineDragStart}
+      onDragOver={onMachineDragOver}
+      onDragLeave={onMachineDragLeave}
+      onDrop={onMachineDrop}
+      onDragEnd={onMachineDragEnd}
+      style={{
+        borderColor: theme.border,
+        opacity: isMuted ? 0.45 : 1,
+        borderTop: isDragOver ? `2px solid ${theme.accent}` : undefined,
+      }}
     >
       {/* Main content row: label strip + grid */}
       <div className="flex">
         {/* Label strip: machine name + mute button */}
         <div
-          className="shrink-0 flex flex-col items-center justify-between py-2 relative"
+          className="shrink-0 flex flex-col items-center justify-between py-2 relative cursor-grab active:cursor-grabbing"
           style={{ width: '20px', background: theme.surface, borderRight: `1px solid ${theme.border}` }}
         >
           <button
