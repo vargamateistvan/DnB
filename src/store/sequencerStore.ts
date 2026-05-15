@@ -170,6 +170,7 @@ interface SequencerActions {
   loadPreset: (preset: 'amen' | 'clear') => void
   loadMachinePreset: (kitId: KitId, preset: MachinePreset) => void
   randomize: (kitId?: KitId) => void
+  clearMachine: (kitId: KitId) => void
   setActivePreset: (kitId: KitId, index: number | null) => void
 }
 
@@ -374,6 +375,17 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
           const isBass = t.synthType === 'mono' || t.synthType === 'synth'
           return { ...t, steps: randomizeTrack(t.id, state.stepCount, isBass) }
         }),
+      }
+    }),
+
+  clearMachine: (kitId) =>
+    set((state) => {
+      const machineTids = new Set(MACHINE_TRACKS[kitId].map((m) => m.id as string))
+      return {
+        tracks: state.tracks.map((t) =>
+          machineTids.has(t.id) ? { ...t, steps: makeSteps(state.stepCount) } : t
+        ),
+        activePresets: { ...state.activePresets, [kitId]: null },
       }
     }),
   }),

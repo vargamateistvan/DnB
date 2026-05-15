@@ -556,6 +556,7 @@ function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: Preset
   const loadMachinePreset = useSequencerStore((s) => s.loadMachinePreset)
   const loadState         = useSequencerStore((s) => s.loadState)
   const setActivePreset   = useSequencerStore((s) => s.setActivePreset)
+  const clearMachine      = useSequencerStore((s) => s.clearMachine)
   const activePresetIdx   = useSequencerStore((s) => s.activePresets[kitId] ?? null)
   const presets    = MACHINE_PRESETS[kitId]
   const accentText = accent === '#fff' ? '#000' : '#fff'
@@ -656,6 +657,26 @@ function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: Preset
           )
         })}
       </div>
+
+      {/* Clear button */}
+      <button
+        onClick={() => { clearMachine(kitId); setActivePreset(kitId, null) }}
+        className="font-mono font-bold uppercase w-full"
+        style={{
+          marginTop: '2px',
+          padding: '3px 7px',
+          fontSize: '9px',
+          letterSpacing: '0.06em',
+          borderRadius: '2px',
+          border: `1px solid ${border}`,
+          background: 'transparent',
+          color: labelColor,
+          cursor: 'pointer',
+          transition: 'border-color 80ms, color 80ms',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = labelColor }}
+      >CLR</button>
     </div>
   )
 }
