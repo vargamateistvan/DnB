@@ -122,6 +122,7 @@ interface Props {
   readonly onPadTrigger: (trackId: string) => void
   readonly onPlay: () => void
   readonly onStop: () => void
+  readonly hideControls?: boolean
   readonly isDragOver?: boolean
   readonly onMachineDragStart?: () => void
   readonly onMachineDragOver?: (e: React.DragEvent) => void
@@ -130,7 +131,7 @@ interface Props {
   readonly onMachineDragEnd?: () => void
 }
 
-export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop, isDragOver, onMachineDragStart, onMachineDragOver, onMachineDragLeave, onMachineDrop, onMachineDragEnd }: Props) {
+export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop, hideControls, isDragOver, onMachineDragStart, onMachineDragOver, onMachineDragLeave, onMachineDrop, onMachineDragEnd }: Props) {
   const mutedKits = useSequencerStore((s) => s.mutedKits)
   const toggleMachineKitMute = useSequencerStore((s) => s.toggleMachineKitMute)
   const theme = MACHINE_THEMES[kitId]
@@ -202,7 +203,7 @@ export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop, isDragOver, 
         }
       </div>
 
-      <MachineControls kitId={kitId} onPlay={onPlay} onStop={onStop} />
+      {!hideControls && <MachineControls kitId={kitId} onPlay={onPlay} onStop={onStop} />}
     </div>
   )
 }

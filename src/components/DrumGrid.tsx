@@ -1,9 +1,20 @@
 import type { CSSProperties } from 'react'
+import { useState, useEffect } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import type { KitId } from '../types'
 
 const BTN_SIZE = 28
+
+function useBtnSize(): number {
+  const [size, setSize] = useState(() => (typeof window !== 'undefined' && window.innerWidth < 640 ? 34 : BTN_SIZE))
+  useEffect(() => {
+    const update = () => setSize(window.innerWidth < 640 ? 34 : BTN_SIZE)
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return size
+}
 
 // TR-808 velocity → color  (deep red → orange → amber → near-white)
 function velColor(v: number): string {
@@ -149,6 +160,7 @@ interface Props {
 }
 
 export function DrumGrid({ kitId, onPadTrigger }: Props) {
+  const btnSize = useBtnSize()
   const tracks = useSequencerStore((s) => s.tracks)
   const currentStep = useSequencerStore((s) => s.currentStep)
   const isPlaying = useSequencerStore((s) => s.isPlaying)
@@ -196,7 +208,7 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                 key={stepIdx}
                 className="text-center font-mono tabular-nums select-none"
                 style={{
-                  width: `${BTN_SIZE}px`,
+                  width: `${btnSize}px`,
                   fontSize: '9px',
                   color: stepIdx % 4 === 0 ? stepNumBeatColor : stepNumColor,
                   fontWeight: stepIdx % 4 === 0 ? 'bold' : 'normal',
@@ -252,7 +264,7 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                   boxShadow: track.muted ? 'none' : `0 0 4px ${trackTheme.accent}40`,
                   ...(is808label ? {
                     width: '20px',
-                    height: `${BTN_SIZE}px`,
+                    height: `${btnSize}px`,
                     writingMode: 'vertical-rl' as const,
                     transform: 'rotate(180deg)',
                     display: 'flex',
@@ -287,8 +299,8 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                           onClick={() => toggleStep(track.id, stepIdx)}
                           className="relative select-none"
                           style={{
-                            width: `${BTN_SIZE}px`,
-                            height: `${BTN_SIZE}px`,
+                            width: `${btnSize}px`,
+                            height: `${btnSize}px`,
                             opacity: track.muted ? 0.25 : 1,
                             cursor: 'pointer',
                             ...css,
