@@ -1,3 +1,4 @@
+import type React from 'react'
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
@@ -45,7 +46,7 @@ function Bender({ value, accent, border, onChange, onRelease }: BenderProps) {
     document.removeEventListener('mouseup', onMouseUp)
   }, [onMouseMove, onMouseUp])
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault()
     dragging.current = true
     onChange(toValue(e.clientY))
@@ -463,8 +464,6 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
     const panelBorder = '#aaa890'
     const panelLabel = '#555'
     const panelAccent = '#c04808'
-    const knobTrack = '#aaa89080'
-    const knobBody = '#c8c4b0'
 
     return (
       <div className="shrink-0 border-t overflow-x-auto" style={{ background: panelBg, borderColor: panelBorder }}>

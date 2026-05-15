@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, type ReactNode } from 'react'
 import * as Tone from 'tone'
 import { useSequencerStore } from '../store/sequencerStore'
 import { KIT_LIST } from '../kits'
@@ -21,7 +21,7 @@ function SmallBtn({
   onClick, children, hoverColor = '#60a5fa', title, disabled = false,
 }: {
   onClick: () => void
-  children: React.ReactNode
+  children: ReactNode
   hoverColor?: string
   title?: string
   disabled?: boolean
