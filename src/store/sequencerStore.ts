@@ -389,6 +389,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
       mutedKits: state.mutedKits,
       trackKits: state.trackKits,
       machineParams: state.machineParams,
+      activePresets: state.activePresets,
     }),
   }
 ))
