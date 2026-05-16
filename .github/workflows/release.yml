@@ -82,52 +82,96 @@ jobs:
       - name: Build release notes
         id: notes
         if: steps.bump.outputs.skip != 'true'
+        env:
+          LATEST: ${{ steps.tag.outputs.latest }}
+          NEXT: ${{ steps.version.outputs.tag }}
+          REPO: ${{ github.repository }}
         run: |
-          LATEST="${{ steps.tag.outputs.latest }}"
-          NEXT="${{ steps.version.outputs.tag }}"
-          REPO="${{ github.repository }}"
+          python3 << 'PYEOF'
+          import os, re, subprocess, textwrap
 
-          if [ "$LATEST" = "v0.0.0" ]; then
-            RANGE="HEAD"
-          else
-            RANGE="${LATEST}..HEAD"
-          fi
+          latest = os.environ["LATEST"]
+          next_v = os.environ["NEXT"]
+          repo   = os.environ["REPO"]
+          base   = f"https://github.com/{repo}"
 
-          # Short hash + subject for each commit
-          LOG=$(git log "$RANGE" --pretty=format:"%h %s")
+          git_range = "HEAD" if latest == "v0.0.0" else f"{latest}..HEAD"
 
-          fmt_section() {
-            local label="$1" pattern="$2"
-            local lines
-            lines=$(echo "$LOG" | grep -E "^[0-9a-f]+ ${pattern}" | \
-              sed -E "s|^([0-9a-f]+) ${pattern} ?(.+)|- \2 ([\\1](https://github.com/${REPO}/commit/\\1))|")
-            if [ -n "$lines" ]; then
-              printf "### %s\n%s\n\n" "$label" "$lines"
-            fi
-          }
+          # Each record: full_hash \x1f short_hash \x1f subject \x1f body \x1e
+          raw = subprocess.check_output(
+              ["git", "log", git_range,
+               "--pretty=format:%H\x1f%h\x1f%s\x1f%b\x1e"],
+              text=True,
+          )
 
-          {
-            echo "## What's Changed"
-            echo ""
-            fmt_section "✨ Features"     'feat(\([^)]+\))?!?:'
-            fmt_section "🐛 Bug Fixes"    'fix(\([^)]+\))?:'
-            fmt_section "⚡ Performance"  'perf(\([^)]+\))?:'
-            fmt_section "♻️  Refactors"   'refactor(\([^)]+\))?:'
-            fmt_section "🔧 Chores"       'chore(\([^)]+\))?:'
-            fmt_section "📖 Docs"         'docs(\([^)]+\))?:'
+          commits = []
+          for record in raw.split("\x1e"):
+              record = record.strip()
+              if not record:
+                  continue
+              parts = record.split("\x1f", 3)
+              if len(parts) < 3:
+                  continue
+              full, short, subject = parts[0], parts[1], parts[2]
+              body = parts[3].strip() if len(parts) == 4 else ""
+              commits.append((full, short, subject, body))
 
-            # Anything that doesn't match a known prefix
-            OTHER=$(echo "$LOG" | \
-              grep -vE '^[0-9a-f]+ (feat|fix|perf|refactor|chore|docs|test|ci|build|style)(\([^)]+\))?!?:' | \
-              sed -E "s|^([0-9a-f]+) (.+)|- \2 ([\\1](https://github.com/${REPO}/commit/\\1))|")
-            if [ -n "$OTHER" ]; then
-              printf "### 📝 Other\n%s\n\n" "$OTHER"
-            fi
+          SECTIONS = [
+              ("✨ Features",    r"feat(\([^)]+\))?!?:"),
+              ("🐛 Bug Fixes",   r"fix(\([^)]+\))?:"),
+              ("⚡ Performance", r"perf(\([^)]+\))?:"),
+              ("♻️  Refactors",  r"refactor(\([^)]+\))?:"),
+              ("🔧 Chores",      r"chore(\([^)]+\))?:"),
+              ("📖 Docs",        r"docs(\([^)]+\))?:"),
+          ]
+          ALL_PREFIXES = r"(feat|fix|perf|refactor|chore|docs|test|ci|build|style)(\([^)]+\))?!?:"
 
-            if [ "$LATEST" != "v0.0.0" ]; then
-              echo "**Full Changelog**: https://github.com/${REPO}/compare/${LATEST}...${NEXT}"
-            fi
-          } > /tmp/release-notes.md
+          def strip_prefix(subject, pattern):
+              return re.sub(r"^" + pattern + r"\s*", "", subject).strip()
+
+          def fmt_commit(full, short, subject, body, pattern):
+              title = strip_prefix(subject, pattern)
+              link  = f"[`{short}`]({base}/commit/{full})"
+              lines = [f"- **{title}** {link}"]
+              if body:
+                  # Wrap body lines as a blockquote beneath the entry
+                  for para in body.split("\n\n"):
+                      para = para.strip()
+                      if para:
+                          wrapped = textwrap.fill(para, width=120)
+                          lines.append(f"  > {wrapped.replace(chr(10), chr(10) + '  > ')}")
+              return "\n".join(lines)
+
+          out = ["## What's Changed\n"]
+
+          matched = set()
+          for label, pattern in SECTIONS:
+              entries = []
+              for full, short, subject, body in commits:
+                  if re.match(r"^" + pattern, subject):
+                      entries.append(fmt_commit(full, short, subject, body, pattern))
+                      matched.add(full)
+              if entries:
+                  out.append(f"### {label}\n")
+                  out.extend(entries)
+                  out.append("")
+
+          other = [
+              fmt_commit(full, short, subject, body, r"")
+              for full, short, subject, body in commits
+              if full not in matched
+          ]
+          if other:
+              out.append("### 📝 Other\n")
+              out.extend(other)
+              out.append("")
+
+          if latest != "v0.0.0":
+              out.append(f"**Full Changelog**: {base}/compare/{latest}...{next_v}")
+
+          with open("/tmp/release-notes.md", "w") as f:
+              f.write("\n".join(out) + "\n")
+          PYEOF
 
       # ── 5. Tag and publish GitHub release ───────────────────────────────────
       - name: Create tag and release
