@@ -4,6 +4,7 @@ import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import { KnobControl } from './KnobControl'
 import { MACHINE_PRESETS } from '../presets'
+import { WaveformPreview } from './WaveformPreview'
 import type { KitId } from '../types'
 
 // ── Bender ────────────────────────────────────────────────────────────────────
@@ -702,66 +703,74 @@ function PresetBar({ kitId, accent, border, labelColor, onPlay, onStop }: Preset
 
   return (
     <div
-      className="flex flex-col gap-1.5 shrink-0"
+      className="flex items-stretch gap-2 shrink-0"
       style={{ marginLeft: 'auto' }}
       onMouseEnter={handleContainerEnter}
       onMouseLeave={handleContainerLeave}
     >
-      <span className="font-mono text-[8px] uppercase tracking-widest" style={{ color: labelColor }}>
-        PRESET
-      </span>
+      {/* Waveform preview — only for synths with a real filter to visualize */}
+      {(kitId === 'tb303' || kitId === 'sh101') && (
+        <WaveformPreview kitId={kitId} color={accent} width={160} height={110} />
+      )}
 
-      {/* 2-column named grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2px' }}>
-        {presets.map((preset, i) => {
-          const active = hoveredIdx === i
-          const isCommitted = activePresetIdx === i
-          return (
-            <button
-              key={preset.name}
-              onMouseEnter={() => { setHoveredIdx(i); loadMachinePreset(kitId, preset) }}
-              onMouseLeave={() => setHoveredIdx(null)}
-              onClick={() => { committedRef.current = true; setActivePreset(kitId, i) }}
-              className="font-mono font-bold select-none uppercase text-left"
-              style={{
-                padding: '3px 7px',
-                fontSize: '9px',
-                letterSpacing: '0.04em',
-                cursor: 'pointer',
-                borderRadius: '2px',
-                border: `1px solid ${active ? accent : isCommitted ? accent : border}`,
-                background: active ? accent : isCommitted ? `${accent}28` : 'transparent',
-                color: active ? accentText : isCommitted ? accent : labelColor,
-                boxShadow: active ? `0 0 8px ${accent}88` : isCommitted ? `0 0 4px ${accent}55` : 'none',
-                transition: 'background 80ms, color 80ms, border-color 80ms, box-shadow 80ms',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {preset.name}
-            </button>
-          )
-        })}
+      {/* Preset buttons + CLR */}
+      <div className="flex flex-col gap-1.5">
+        <span className="font-mono text-[8px] uppercase tracking-widest" style={{ color: labelColor }}>
+          PRESET
+        </span>
+
+        {/* 2-column named grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2px' }}>
+          {presets.map((preset, i) => {
+            const active = hoveredIdx === i
+            const isCommitted = activePresetIdx === i
+            return (
+              <button
+                key={preset.name}
+                onMouseEnter={() => { setHoveredIdx(i); loadMachinePreset(kitId, preset) }}
+                onMouseLeave={() => setHoveredIdx(null)}
+                onClick={() => { committedRef.current = true; setActivePreset(kitId, i) }}
+                className="font-mono font-bold select-none uppercase text-left"
+                style={{
+                  padding: '3px 7px',
+                  fontSize: '9px',
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                  borderRadius: '2px',
+                  border: `1px solid ${active ? accent : isCommitted ? accent : border}`,
+                  background: active ? accent : isCommitted ? `${accent}28` : 'transparent',
+                  color: active ? accentText : isCommitted ? accent : labelColor,
+                  boxShadow: active ? `0 0 8px ${accent}88` : isCommitted ? `0 0 4px ${accent}55` : 'none',
+                  transition: 'background 80ms, color 80ms, border-color 80ms, box-shadow 80ms',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {preset.name}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Clear button */}
+        <button
+          onClick={() => { clearMachine(kitId); setActivePreset(kitId, null) }}
+          className="font-mono font-bold uppercase w-full"
+          style={{
+            marginTop: '2px',
+            padding: '3px 7px',
+            fontSize: '9px',
+            letterSpacing: '0.06em',
+            borderRadius: '2px',
+            border: `1px solid ${border}`,
+            background: 'transparent',
+            color: labelColor,
+            cursor: 'pointer',
+            transition: 'border-color 80ms, color 80ms',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = labelColor }}
+        >CLR</button>
       </div>
-
-      {/* Clear button */}
-      <button
-        onClick={() => { clearMachine(kitId); setActivePreset(kitId, null) }}
-        className="font-mono font-bold uppercase w-full"
-        style={{
-          marginTop: '2px',
-          padding: '3px 7px',
-          fontSize: '9px',
-          letterSpacing: '0.06em',
-          borderRadius: '2px',
-          border: `1px solid ${border}`,
-          background: 'transparent',
-          color: labelColor,
-          cursor: 'pointer',
-          transition: 'border-color 80ms, color 80ms',
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = labelColor }}
-      >CLR</button>
     </div>
   )
 }

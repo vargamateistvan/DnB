@@ -126,7 +126,7 @@ export default function App() {
 
         {/* Controls drawer */}
         {showControls && (
-          <div className="shrink-0 overflow-x-auto border-b" style={{ maxHeight: '38vh', borderColor: MACHINE_THEMES[mobileKit].border }}>
+          <div className="shrink-0 overflow-x-auto overflow-y-auto border-b" style={{ maxHeight: '50vh', borderColor: MACHINE_THEMES[mobileKit].border }}>
             <MachineControls kitId={mobileKit} onPlay={play} onStop={stop} />
           </div>
         )}

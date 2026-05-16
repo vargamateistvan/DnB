@@ -529,6 +529,8 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           >TAP</button>
         </div>
 
+        <Oscilloscope width={72} height={28} />
+
         <button
           onClick={() => setMenuOpen((v) => !v)}
           className="flex flex-col gap-1 justify-center items-center w-9 h-9 shrink-0"
