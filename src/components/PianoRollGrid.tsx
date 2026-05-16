@@ -7,8 +7,7 @@ const NOTES: string[] = [
   'B2','A#2','A2','G#2','G2','F#2','F2','E2','D#2','D2','C#2','C2',
 ]
 
-const BTN = 28   // px — column width (matches DrumGrid BTN_SIZE)
-const ROW_H = 40 // px — row height (taller for easier note targeting)
+const BTN = 28   // px — square cell size (matches DrumGrid BTN_SIZE)
 const GAP = 2    // px — gap between cells
 const GRP = 6    // px — gap between beat groups
 
