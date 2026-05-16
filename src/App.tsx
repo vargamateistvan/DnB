@@ -13,11 +13,51 @@ export default function App() {
   const activeKits = useSequencerStore((s) => s.activeKits)
   const reorderKit = useSequencerStore((s) => s.reorderKit)
 
+  // ── Desktop drag-to-reorder ──────────────────────────────────────────────
   const dragKitRef   = useRef<KitId | null>(null)
   const [dragOverKit, setDragOverKit] = useState<KitId | null>(null)
 
+  // ── Mobile state ─────────────────────────────────────────────────────────
   const [mobileKit, setMobileKit] = useState<KitId>(activeKits[0])
   const [showControls, setShowControls] = useState(false)
+
+  // ── Mobile tab drag-to-reorder (Pointer Events) ──────────────────────────
+  const tabDragRef = useRef<{ kitId: KitId; startX: number; startY: number; isDragging: boolean } | null>(null)
+  const [tabDragging, setTabDragging] = useState<KitId | null>(null)
+  const [tabDragOver, setTabDragOver] = useState<KitId | null>(null)
+  const didTabDragRef = useRef(false)
+
+  const onTabPointerDown = (kitId: KitId, e: React.PointerEvent<HTMLButtonElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    tabDragRef.current = { kitId, startX: e.clientX, startY: e.clientY, isDragging: false }
+  }
+
+  const onTabPointerMove = (kitId: KitId, e: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = tabDragRef.current
+    if (!drag || drag.kitId !== kitId) return
+    const dx = Math.abs(e.clientX - drag.startX)
+    const dy = Math.abs(e.clientY - drag.startY)
+    if (!drag.isDragging) {
+      if (dx < 10 || dx <= dy) return
+      drag.isDragging = true
+      setTabDragging(kitId)
+    }
+    const el = document.elementFromPoint(e.clientX, e.clientY)
+    const over = el?.closest('[data-tabkit]')?.getAttribute('data-tabkit') as KitId | null
+    setTabDragOver(over ?? null)
+  }
+
+  const onTabPointerUp = (kitId: KitId) => {
+    const drag = tabDragRef.current
+    if (!drag || drag.kitId !== kitId) return
+    if (drag.isDragging) {
+      didTabDragRef.current = true
+      if (tabDragOver && tabDragOver !== kitId) reorderKit(kitId, tabDragOver)
+    }
+    tabDragRef.current = null
+    setTabDragging(null)
+    setTabDragOver(null)
+  }
 
   useEffect(() => {
     if (!activeKits.includes(mobileKit)) setMobileKit(activeKits[0])
@@ -65,7 +105,7 @@ export default function App() {
           style={{
             background: showControls ? MACHINE_THEMES[mobileKit].panel : '#0d0d0d',
             borderColor: MACHINE_THEMES[mobileKit].border,
-            color: MACHINE_THEMES[mobileKit].accent,
+            color: showControls ? MACHINE_THEMES[mobileKit].accent : '#888',
           }}
         >
           <span style={{ fontSize: '8px' }}>{showControls ? '▼' : '▲'}</span>
@@ -88,11 +128,21 @@ export default function App() {
             return (
               <button
                 key={kitId}
-                onClick={() => { setMobileKit(kitId); setShowControls(false) }}
+                data-tabkit={kitId}
+                onClick={() => {
+                  if (didTabDragRef.current) { didTabDragRef.current = false; return }
+                  setMobileKit(kitId); setShowControls(false)
+                }}
+                onPointerDown={(e) => onTabPointerDown(kitId, e)}
+                onPointerMove={(e) => onTabPointerMove(kitId, e)}
+                onPointerUp={() => onTabPointerUp(kitId)}
+                onPointerCancel={() => onTabPointerUp(kitId)}
                 className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-all"
                 style={{
                   background: isSel ? theme.surface : 'transparent',
-                  borderTop: `2px solid ${isSel ? theme.accent : 'transparent'}`,
+                  borderTop: `2px solid ${tabDragOver === kitId ? theme.accent : isSel ? theme.accent : 'transparent'}`,
+                  opacity: tabDragging === kitId ? 0.4 : 1,
+                  touchAction: 'none',
                 }}
               >
                 <span

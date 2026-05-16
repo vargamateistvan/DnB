@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Step, Track, TrackId, KitId, SequencerState, MachineParams } from '../types'
 import { DEFAULT_MACHINE_PARAMS, MACHINE_TRACKS } from '../machines'
 import type { MachinePreset, PresetStep } from '../presets'
@@ -391,6 +391,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
   }),
   {
     name: 'dnb-sequencer',
+    storage: createJSONStorage(() => localStorage),
     partialize: (state) => ({
       tracks: state.tracks,
       bpm: state.bpm,
@@ -403,5 +404,21 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
       machineParams: state.machineParams,
       activePresets: state.activePresets,
     }),
+    merge: (persisted, current) => {
+      const p = persisted as Partial<SequencerState>
+      const d = DEFAULT_MACHINE_PARAMS
+      return {
+        ...current,
+        ...p,
+        machineParams: {
+          tr808: { ...d.tr808, ...p.machineParams?.tr808 },
+          tr909: { ...d.tr909, ...p.machineParams?.tr909 },
+          tr606: { ...d.tr606, ...p.machineParams?.tr606 },
+          tr707: { ...d.tr707, ...p.machineParams?.tr707 },
+          tb303: { ...d.tb303, ...p.machineParams?.tb303 },
+          sh101: { ...d.sh101, ...p.machineParams?.sh101 },
+        },
+      }
+    },
   }
 ))

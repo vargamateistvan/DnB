@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 
 interface Props {
   value: number
@@ -21,7 +21,11 @@ export function KnobControl({
   size = 44,
   onChange,
 }: Props) {
-  const dragRef = useRef<{ startY: number; startVal: number } | null>(null)
+  const dragRef    = useRef<{ startY: number; startVal: number } | null>(null)
+  const valueRef   = useRef(value)
+  const onChangeRef = useRef(onChange)
+  useEffect(() => { valueRef.current = value }, [value])
+  useEffect(() => { onChangeRef.current = onChange }, [onChange])
 
   const angle = -135 + value * 270
   const rad = (angle * Math.PI) / 180
@@ -42,45 +46,39 @@ export function KnobControl({
     return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`
   }
 
-  const onMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      dragRef.current = { startY: e.clientY, startVal: value }
-      const onMove = (ev: MouseEvent) => {
-        if (!dragRef.current) return
-        const delta = (dragRef.current.startY - ev.clientY) / 120
-        onChange(Math.max(0, Math.min(1, dragRef.current.startVal + delta)))
-      }
-      const onUp = () => {
-        dragRef.current = null
-        window.removeEventListener('mousemove', onMove)
-        window.removeEventListener('mouseup', onUp)
-      }
-      window.addEventListener('mousemove', onMove)
-      window.addEventListener('mouseup', onUp)
-    },
-    [value, onChange]
-  )
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    dragRef.current = { startY: e.clientY, startVal: valueRef.current }
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return
+      const delta = (dragRef.current.startY - ev.clientY) / 120
+      onChangeRef.current(Math.max(0, Math.min(1, dragRef.current.startVal + delta)))
+    }
+    const onUp = () => {
+      dragRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [])
 
-  const onTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      e.preventDefault()
-      dragRef.current = { startY: e.touches[0].clientY, startVal: value }
-      const onMove = (ev: TouchEvent) => {
-        if (!dragRef.current) return
-        const delta = (dragRef.current.startY - ev.touches[0].clientY) / 120
-        onChange(Math.max(0, Math.min(1, dragRef.current.startVal + delta)))
-      }
-      const onUp = () => {
-        dragRef.current = null
-        window.removeEventListener('touchmove', onMove)
-        window.removeEventListener('touchend', onUp)
-      }
-      window.addEventListener('touchmove', onMove, { passive: false })
-      window.addEventListener('touchend', onUp)
-    },
-    [value, onChange]
-  )
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault()
+    dragRef.current = { startY: e.touches[0].clientY, startVal: valueRef.current }
+    const onMove = (ev: TouchEvent) => {
+      if (!dragRef.current) return
+      const delta = (dragRef.current.startY - ev.touches[0].clientY) / 120
+      onChangeRef.current(Math.max(0, Math.min(1, dragRef.current.startVal + delta)))
+    }
+    const onUp = () => {
+      dragRef.current = null
+      window.removeEventListener('touchmove', onMove)
+      window.removeEventListener('touchend', onUp)
+    }
+    window.addEventListener('touchmove', onMove, { passive: false })
+    window.addEventListener('touchend', onUp)
+  }, [])
 
   return (
     <div className="flex flex-col items-center gap-0.5 select-none">

@@ -142,7 +142,7 @@ export function MachinePanel({ kitId, onPadTrigger, onPlay, onStop, hideControls
   return (
     <div
       className="flex flex-col shrink-0 border-b"
-      draggable
+      draggable={!!onMachineDragStart}
       onDragStart={onMachineDragStart}
       onDragOver={onMachineDragOver}
       onDragLeave={onMachineDragLeave}
