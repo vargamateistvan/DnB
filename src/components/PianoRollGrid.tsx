@@ -12,8 +12,8 @@ const ROW_H = 40 // px — row height (taller for easier note targeting)
 const GAP = 2    // px — gap between cells
 const GRP = 6    // px — gap between beat groups
 
-// TB-303 triangle clip-path (upward-pointing ▲, equilateral proportions in 28×40 container)
-const TRIANGLE = 'polygon(50% 39%, 0% 100%, 100% 100%)'
+// Equilateral ▲ centered in a square cell: height = (√3/2)×width ≈ 86.6%, vertical pad ≈ 6.7%
+const TRIANGLE = 'polygon(50% 6.7%, 0% 93.3%, 100% 93.3%)'
 
 const KIT_NAMES: Record<KitId, string> = {
   sh101: 'SH-101', tb303: 'TB-303', tr808: 'TR-808',
@@ -48,6 +48,29 @@ export function PianoRollGrid({ kitId }: Props) {
       className="flex-1 relative overflow-auto px-4 py-4"
       style={{ background: theme.bg }}
     >
+      {/* Beat number row */}
+      <div className="flex mb-1" style={{ paddingLeft: `${BTN + GRP}px`, gap: `${GRP}px` }}>
+        {groups.map((group, gi) => (
+          <div key={gi} className="flex" style={{ gap: `${GAP}px` }}>
+            {group.map((stepIdx) => (
+              <div
+                key={stepIdx}
+                className="text-center font-mono tabular-nums select-none"
+                style={{
+                  width: `${BTN}px`,
+                  fontSize: '9px',
+                  color: stepIdx % 4 === 0 ? theme.accent : theme.textDim,
+                  fontWeight: stepIdx % 4 === 0 ? 'bold' : 'normal',
+                  opacity: stepIdx % 4 === 0 ? 0.85 : 0.35,
+                }}
+              >
+                {stepIdx % 4 === 0 ? String(stepIdx / 4 + 1) : '·'}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
       {/* Grid rows */}
       <div className="flex flex-col" style={{ gap: `${GAP}px` }}>
         {NOTES.map((rowNote, rowIdx) => {
@@ -79,7 +102,7 @@ export function PianoRollGrid({ kitId }: Props) {
                   className="shrink-0 flex items-center justify-center select-none font-mono"
                   style={{
                     width: '28px',
-                    height: `${ROW_H}px`,
+                    height: `${BTN}px`,
                     background: chipBg,
                     border: chipBorder,
                     borderRadius: '2px',
@@ -106,7 +129,7 @@ export function PianoRollGrid({ kitId }: Props) {
                       const isActive  = (step?.active ?? false) && stepNote === rowNote
                       const isOtherNote = (step?.active ?? false) && stepNote !== rowNote
                       const isCurrent = isPlaying && (currentStep % trackStepCount) === stepIdx
-                      const isBeat1   = stepIdx % 8 === 0
+                      const isBeat1   = stepIdx % 4 === 0
 
                       const isHit = isCurrent && isActive
 
@@ -115,15 +138,17 @@ export function PianoRollGrid({ kitId }: Props) {
                         let triScale: number
                         if (isHit)            triScale = 1.05
                         else if (isActive)    triScale = 0.80
-                        else if (isOtherNote) triScale = isSharp ? 0.40 : 0.34
-                        else                  triScale = isSharp ? 0.30 : 0.20
+                        else if (isOtherNote) triScale = 0.42
+                        else                  triScale = 0.42
 
+                        // Active triangle matches chip color; inactive uses chip at lower opacity
                         let triColor: string
-                        if (isActive)         triColor = isSharp ? '#1a1a1a' : '#f0f0f0'
-                        else if (isOtherNote) triColor = isSharp ? 'rgba(0,0,0,0.42)' : 'rgba(0,0,0,0.26)'
-                        else                  triColor = isSharp ? 'rgba(0,0,0,0.32)' : 'rgba(0,0,0,0.13)'
+                        if (isActive)         triColor = isSharp ? '#111' : 'rgba(255,255,255,0.82)'
+                        else if (isOtherNote) triColor = isSharp ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.44)'
+                        else if (isBeat1)     triColor = isSharp ? 'rgba(0,0,0,0.52)' : 'rgba(255,255,255,0.38)'
+                        else                  triColor = isSharp ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.20)'
 
-                        const currentHighlight = isSharp ? 'rgba(0,0,0,0.48)' : 'rgba(0,0,0,0.22)'
+                        const currentHighlight = isSharp ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.35)'
                         const curColor = (isCurrent && !isActive) ? currentHighlight : triColor
 
                         return (
@@ -149,7 +174,7 @@ export function PianoRollGrid({ kitId }: Props) {
                             className="select-none shrink-0"
                             style={{
                               width: `${BTN}px`,
-                              height: `${ROW_H}px`,
+                              height: `${BTN}px`,
                               clipPath: TRIANGLE,
                               backgroundColor: curColor,
                               border: 'none',
@@ -211,7 +236,7 @@ export function PianoRollGrid({ kitId }: Props) {
                           className="select-none shrink-0 transition-all"
                           style={{
                             width: `${BTN}px`,
-                            height: `${ROW_H}px`,
+                            height: `${BTN}px`,
                             borderRadius: '2px',
                             border: 'none',
                             cursor: 'pointer',
