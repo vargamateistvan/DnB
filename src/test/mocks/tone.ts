@@ -107,6 +107,16 @@ const mockContext = {
   A4: 440,
 }
 
+const mockDestination = {
+  connect: vi.fn(),
+  disconnect: vi.fn(),
+}
+
+const mockWaveform = vi.fn().mockImplementation(() => ({
+  getValue: vi.fn().mockReturnValue(new Float32Array(1024)),
+  dispose: vi.fn(),
+}))
+
 export const Player = mockPlayer
 export const Synth = mockSynth
 export const MembraneSynth = mockMembraneSynth
@@ -117,6 +127,8 @@ export const Gain = mockGain
 export const Recorder = mockRecorder
 export const Transport = mockTransport
 export const getContext = vi.fn(() => mockContext)
+export const getDestination = vi.fn(() => mockDestination)
+export const Waveform = mockWaveform
 export const start = vi.fn().mockResolvedValue(undefined)
 export const gainToDb = vi.fn((gain: number) => Math.log10(gain) * 20)
 export const dbToGain = vi.fn((db: number) => 10 ** (db / 20))
