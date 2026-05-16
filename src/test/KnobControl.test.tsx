@@ -21,10 +21,10 @@ describe('KnobControl', () => {
     const onChange = vi.fn()
     render(<KnobControl value={0.5} label="VOLUME" onChange={onChange} />)
 
-    const svg = document.querySelector('svg')
+    const svg = document.querySelector('svg') as SVGSVGElement
 
     fireEvent.mouseDown(svg, { clientY: 100 })
-    fireEvent.mouseMove(globalThis, { clientY: 40 })
+    fireEvent.mouseMove(window, { clientY: 40 })
 
     expect(onChange).toHaveBeenCalled()
     const calledWith = (onChange.mock.calls[0] as [number])[0]
@@ -32,34 +32,34 @@ describe('KnobControl', () => {
     expect(calledWith).toBeGreaterThanOrEqual(0)
     expect(calledWith).toBeLessThanOrEqual(1)
 
-    fireEvent.mouseUp(globalThis)
+    fireEvent.mouseUp(window)
   })
 
   it('drag upward increases the value above the starting value', () => {
     const onChange = vi.fn()
     render(<KnobControl value={0.5} label="RES" onChange={onChange} />)
-    const svg = document.querySelector('svg')
+    const svg = document.querySelector('svg') as SVGSVGElement
 
     fireEvent.mouseDown(svg, { clientY: 100 })
-    fireEvent.mouseMove(globalThis, { clientY: 40 })
+    fireEvent.mouseMove(window, { clientY: 40 })
 
     const calledWith = (onChange.mock.calls[0] as [number])[0]
     expect(calledWith).toBeGreaterThan(0.5)
 
-    fireEvent.mouseUp(globalThis)
+    fireEvent.mouseUp(window)
   })
 
   it('clamps value to max 1', () => {
     const onChange = vi.fn()
     render(<KnobControl value={0.9} label="GAIN" onChange={onChange} />)
-    const svg = document.querySelector('svg')
+    const svg = document.querySelector('svg') as SVGSVGElement
 
     fireEvent.mouseDown(svg, { clientY: 100 })
-    fireEvent.mouseMove(globalThis, { clientY: -9999 })
+    fireEvent.mouseMove(window, { clientY: -9999 })
 
     const calledWith = (onChange.mock.calls[0] as [number])[0]
     expect(calledWith).toBeLessThanOrEqual(1)
 
-    fireEvent.mouseUp(globalThis)
+    fireEvent.mouseUp(window)
   })
 })
