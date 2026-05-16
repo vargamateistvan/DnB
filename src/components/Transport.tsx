@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, type ReactNode } from 'react'
 import * as Tone from 'tone'
 import { useSequencerStore } from '../store/sequencerStore'
 import { KIT_LIST } from '../kits'
+import { MACHINE_THEMES } from '../machines'
 import { useExport } from '../hooks/useExport'
 import { useSongs, type SongEntry } from '../hooks/useSongs'
 import { useMidiImport } from '../hooks/useMidiImport'
@@ -41,54 +42,131 @@ function SmallBtn({
   )
 }
 
-function HowToUseModal({ onClose }: { readonly onClose: () => void }) {
-  const sections: { title: string; items: string[] }[] = [
-    {
-      title: 'Step Sequencer',
-      items: [
-        'Click any step button to toggle it on/off',
-        'Right-click a pad label to mute/unmute that track',
-        'Click a pad label to preview the sound',
-        'Drag the 6-dot handle on a row to reorder tracks',
-      ],
-    },
-    {
-      title: 'Machines',
-      items: [
-        'Toggle machines on/off from the top bar',
-        'Drag the vertical label strip to reorder machines',
-        'Hover the machine name for hardware specs & history',
-        'Each machine has hardware-style controls (knobs, faders, envelopes)',
-      ],
-    },
-    {
-      title: 'Transport & Pattern',
-      items: [
-        'BPM slider controls tempo (60–220)',
-        'SWG (Swing) adds shuffle feel to the groove',
-        'Choose 16, 32, or 64 steps per pattern',
-        'RND randomizes the pattern · AMEN loads the Amen break · CLR clears all steps',
-      ],
-    },
-    {
-      title: 'Sessions & MIDI',
-      items: [
-        'Save/load up to 4 sessions — state is persisted across refreshes',
-        '↑MIDI imports a MIDI file into the active pattern',
-        '↓MIDI exports the current pattern as a MIDI file',
-        'Red button records audio output — click again to stop & download',
-      ],
-    },
-    {
-      title: 'Mobile',
-      items: [
-        'Use the bottom tab bar to switch between machines',
-        'Tap Controls (▲) to reveal the machine control panel',
-        'BPM slider and machine toggles are always in the top bar',
-      ],
-    },
-  ]
+const MACHINES_INFO: { name: string; year: string; tagline: string; chipBg: string; chipText: string; items: string[] }[] = [
+  {
+    name: 'TR-808', year: '1980',
+    chipBg: MACHINE_THEMES.tr808.surface, chipText: MACHINE_THEMES.tr808.accent,
+    tagline: 'Analog drum machine — the sound of hip-hop, trap & electro.',
+    items: [
+      '10 voices: BD, SD, CH, OH, CP, RS, LT, HT, CY, CB',
+      'Right-click an active step to set velocity and probability',
+      'LEVEL CONTROLS panel — per-voice volume knobs',
+    ],
+  },
+  {
+    name: 'TR-909', year: '1983',
+    chipBg: MACHINE_THEMES.tr909.surface, chipText: MACHINE_THEMES.tr909.accent,
+    tagline: 'Hybrid analog/PCM machine — foundation of house & techno.',
+    items: [
+      '9 voices: BD, SD, CH, OH, HC, RM, LT, HT, CC',
+      'Per-voice LEVEL and DECAY controls in the panel',
+      'OH DECAY knob controls open hi-hat tail length',
+    ],
+  },
+  {
+    name: 'TR-606', year: '1981',
+    chipBg: MACHINE_THEMES.tr606.surface, chipText: MACHINE_THEMES.tr606.accent,
+    tagline: 'Compact analog — raw lo-fi textures for electro & post-punk.',
+    items: [
+      '8 voices; clap and rim are synthesized (no samples)',
+      'Per-voice volume and decay in the controls panel',
+    ],
+  },
+  {
+    name: 'TR-707', year: '1984',
+    chipBg: MACHINE_THEMES.tr707.surface, chipText: MACHINE_THEMES.tr707.accent,
+    tagline: 'PCM digital — bright punchy sounds that defined 80s pop & R&B.',
+    items: [
+      '9 digital voices: BD, SD, CH, OH, CP, RS, LT, HT, CY',
+      'Per-voice level and tone controls in the panel',
+    ],
+  },
+  {
+    name: 'TB-303', year: '1981',
+    chipBg: MACHINE_THEMES.tb303.surface, chipText: MACHINE_THEMES.tb303.accent,
+    tagline: 'Acid bass synth — the squelch that launched acid house.',
+    items: [
+      'Click a piano roll cell to set a note and activate that step',
+      'Click an active cell on a different row to move the note',
+      'CUTOFF, RESONANCE, ENV MOD, DECAY, ACCENT knobs',
+      'WAVEFORM toggle (sawtooth / square) · DISTORTION · DELAY',
+      'Pitch bender strip for live modulation',
+    ],
+  },
+  {
+    name: 'SH-101', year: '1982',
+    chipBg: MACHINE_THEMES.sh101.surface, chipText: MACHINE_THEMES.sh101.accent,
+    tagline: 'Monophonic analog synth — warm leads & fat basslines.',
+    items: [
+      'Same 2-octave piano roll as the TB-303',
+      'VCF (cutoff, resonance) and VCA (ADSR) envelope controls',
+      'LFO rate and depth · PORTAMENTO glide slider',
+      'WAVEFORM toggle (pulse / sawtooth) · REVERB effect',
+    ],
+  },
+]
 
+const HOW_TO_SECTIONS: { title: string; items: string[] }[] = [
+  {
+    title: 'Step Sequencer',
+    items: [
+      'Click a step to toggle it on/off',
+      'Right-click an active step → set VELOCITY and PROB % (chance it fires)',
+      'Left-click a track label to preview that sound',
+      'Right-click a track label to mute/unmute the track',
+      'Drag the ⠿ handle on a row to reorder tracks',
+      'Click + on a row to add a custom track · × to remove it',
+    ],
+  },
+  {
+    title: 'Piano Roll (TB-303 & SH-101)',
+    items: [
+      'Click an empty cell to activate a step at that pitch',
+      'Click an active cell on the same row to deactivate it',
+      'Click an active cell on a different row to move the note',
+      'Beat numbers 1–4 above the grid mark each group of 4 steps',
+    ],
+  },
+  {
+    title: 'Transport & Pattern',
+    items: [
+      'TAP the TAP button 2+ times to set BPM from your rhythm',
+      'SWG slider adds a shuffle/swing feel to the groove',
+      'Choose 16, 32, or 64 steps per pattern',
+      'Ctrl+Z / Ctrl+Y (Cmd on Mac) — undo / redo pattern changes',
+      'RND randomizes · AMEN loads the Amen break · CLR clears all steps',
+    ],
+  },
+  {
+    title: 'Machines',
+    items: [
+      'Toggle machines on/off from the kit buttons in the transport bar',
+      'Drag the vertical label strip to reorder machines',
+      'Click the speaker icon on the label strip to mute an entire machine',
+      'Hover the machine name to see hardware specs & history',
+      'PRESET bar loads a built-in groove · CLR wipes it · RND randomizes',
+    ],
+  },
+  {
+    title: 'Sessions & Export',
+    items: [
+      'SONGS — save and load named sessions (state also persists automatically)',
+      '↑MIDI imports a MIDI file into the active pattern',
+      '↓MIDI exports the current pattern as a .mid file',
+      '⏺ REC records audio output — click again to stop and download as .mp3',
+    ],
+  },
+  {
+    title: 'Mobile',
+    items: [
+      'Use the bottom tab bar to switch between machines',
+      'Drag the tab bar to reorder machines',
+      'Tap Controls (▲) to reveal the machine control panel',
+    ],
+  },
+]
+
+function HowToUseModal({ onClose }: { readonly onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -96,7 +174,7 @@ function HowToUseModal({ onClose }: { readonly onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md max-h-[85vh] overflow-y-auto flex flex-col"
+        className="w-full max-w-lg max-h-[88vh] overflow-y-auto flex flex-col"
         style={{ background: '#191919', border: `1px solid ${BORDER}`, borderRadius: '6px' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -105,15 +183,7 @@ function HowToUseModal({ onClose }: { readonly onClose: () => void }) {
           className="flex items-center justify-between px-5 py-4 border-b shrink-0"
           style={{ borderColor: BORDER }}
         >
-          <span
-            style={{
-              fontFamily: "'Rajdhani', sans-serif",
-              fontWeight: 700,
-              fontSize: '15px',
-              letterSpacing: '0.12em',
-              color: '#fff',
-            }}
-          >
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.12em', color: '#fff' }}>
             HOW TO USE
           </span>
           <button
@@ -125,14 +195,51 @@ function HowToUseModal({ onClose }: { readonly onClose: () => void }) {
           >×</button>
         </div>
 
-        {/* Body */}
-        <div className="flex flex-col gap-5 px-5 py-4">
-          {sections.map((s) => (
+        <div className="flex flex-col gap-6 px-5 py-5">
+
+          {/* Machines */}
+          <div>
+            <div className="font-mono text-[9px] uppercase tracking-widest mb-3" style={{ color: TEXT_DIM }}>
+              Machines
+            </div>
+            <div className="flex flex-col gap-3">
+              {MACHINES_INFO.map((m) => (
+                <div key={m.name}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      style={{
+                        fontFamily: "'Rajdhani', sans-serif", fontWeight: 700,
+                        fontSize: '11px', letterSpacing: '0.1em',
+                        background: m.chipBg, color: m.chipText,
+                        padding: '1px 6px', borderRadius: '2px',
+                        flexShrink: 0,
+                      }}
+                    >{m.name}</span>
+                    <span className="font-mono text-[9px]" style={{ color: '#444' }}>{m.year}</span>
+                    <span className="font-mono text-[9px]" style={{ color: '#666' }}>— {m.tagline}</span>
+                  </div>
+                  <div className="flex flex-col gap-0.5 pl-2">
+                    {m.items.map((item) => (
+                      <div key={item} className="flex items-start gap-2 font-mono text-[10px]" style={{ color: '#888' }}>
+                        <span style={{ color: '#555', flexShrink: 0 }}>·</span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: '1px', background: BORDER }} />
+
+          {/* How-to sections */}
+          {HOW_TO_SECTIONS.map((s) => (
             <div key={s.title}>
-              <div
-                className="font-mono text-[9px] uppercase tracking-widest mb-2"
-                style={{ color: TEXT_DIM }}
-              >{s.title}</div>
+              <div className="font-mono text-[9px] uppercase tracking-widest mb-2" style={{ color: TEXT_DIM }}>
+                {s.title}
+              </div>
               <div className="flex flex-col gap-1.5">
                 {s.items.map((item) => (
                   <div key={item} className="flex items-start gap-2 font-mono text-[11px]" style={{ color: '#aaa' }}>
@@ -143,6 +250,7 @@ function HowToUseModal({ onClose }: { readonly onClose: () => void }) {
               </div>
             </div>
           ))}
+
         </div>
       </div>
     </div>
