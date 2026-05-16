@@ -406,11 +406,13 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
 
   const bpm        = useSequencerStore((s) => s.bpm)
   const swing      = useSequencerStore((s) => s.swing)
+  const masterTune = useSequencerStore((s) => s.masterTune)
   const stepCount  = useSequencerStore((s) => s.stepCount)
   const isPlaying  = useSequencerStore((s) => s.isPlaying)
   const activeKits = useSequencerStore((s) => s.activeKits)
   const setBpm     = useSequencerStore((s) => s.setBpm)
   const setSwing   = useSequencerStore((s) => s.setSwing)
+  const setMasterTune = useSequencerStore((s) => s.setMasterTune)
   const setStepCount  = useSequencerStore((s) => s.setStepCount)
   const toggleKit  = useSequencerStore((s) => s.toggleKit)
 
@@ -572,6 +574,18 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
             <span className="font-mono text-[10px] tabular-nums w-8 text-right" style={{ color: TEXT_DIM }}>{Math.round(swing * 100)}%</span>
           </div>
 
+          {/* Master tune */}
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-widest w-8 shrink-0" style={{ color: TEXT_DIM }}>A4</span>
+            <input
+              type="range" min={432} max={444} step={1} value={masterTune}
+              onChange={(e) => setMasterTune(Number(e.target.value))}
+              className="flex-1 cursor-pointer"
+              style={{ accentColor: '#fff' }}
+            />
+            <span className="font-mono text-[10px] tabular-nums w-8 text-right" style={{ color: TEXT_DIM }}>{masterTune} Hz</span>
+          </div>
+
           {/* MIDI + Record */}
           <div className="flex items-center gap-2 flex-wrap">
             <SmallBtn onClick={importMidi} hoverColor="#4ade80" title="Import MIDI">↑MIDI</SmallBtn>
@@ -664,6 +678,18 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           style={{ accentColor: '#fff' }}
         />
         <span className="font-mono text-[10px] tabular-nums w-6" style={{ color: TEXT_DIM }}>{Math.round(swing * 100)}%</span>
+      </div>
+
+      {/* Master tune */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: TEXT_DIM }}>A4</span>
+        <input
+          type="range" min={432} max={444} step={1} value={masterTune}
+          onChange={(e) => setMasterTune(Number(e.target.value))}
+          className="w-16 cursor-pointer"
+          style={{ accentColor: '#fff' }}
+        />
+        <span className="font-mono text-[10px] tabular-nums w-7" style={{ color: TEXT_DIM }}>{masterTune}</span>
       </div>
 
       <div className="w-px h-5 shrink-0" style={{ background: BORDER }} />

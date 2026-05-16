@@ -25,7 +25,13 @@ export interface Track {
 
 // ── Machine parameter types ───────────────────────────────────────────────────
 
-export interface TR808Params { shuffle: number; accentLevel: number }
+export interface TR808Params {
+  shuffle: number
+  accentLevel: number
+  kickTune: number   // 0–1 → ±1 octave (±1200 cents) from C1
+  tomLoTune: number  // 0–1 → ±1 octave from E1
+  tomHiTune: number  // 0–1 → ±1 octave from A1
+}
 export interface TR909Params {
   shuffle: number; accentLevel: number
   bdDecay: number; sdSnappy: number
@@ -41,6 +47,8 @@ export interface TB303Params {
   decay: number
   accent: number
   waveform: 'sawtooth' | 'square'
+  detune: number     // 0–1 → −50 to +50 cents (fine tune)
+  transpose: number  // integer, −12 to +12 semitones
 }
 export interface SH101Params {
   vcfFreq: number
@@ -51,6 +59,8 @@ export interface SH101Params {
   waveform: 'pulse' | 'sawtooth'
   portamento: number
   pitchBend: number  // -1 to 1, maps to ±12 semitones
+  detune: number     // 0–1 → −50 to +50 cents (fine tune)
+  transpose: number  // integer, −12 to +12 semitones
 }
 
 export interface MachineParams {
@@ -66,6 +76,7 @@ export interface SequencerState {
   tracks: Track[]
   bpm: number
   swing: number
+  masterTune: number  // Hz, 432–444, default 440
   stepCount: 16 | 32 | 64
   isPlaying: boolean
   currentStep: number

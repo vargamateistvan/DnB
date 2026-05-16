@@ -188,6 +188,7 @@ interface SequencerActions {
   clearMachine: (kitId: KitId) => void
   setActivePreset: (kitId: KitId, index: number | null) => void
   setStepProbability: (trackId: string, stepIndex: number, probability: number) => void
+  setMasterTune: (hz: number) => void
   undo: () => void
   redo: () => void
 }
@@ -200,6 +201,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
   tracks: DEFAULT_TRACKS,
   bpm: 174,
   swing: 0,
+  masterTune: 440,
   stepCount: 16,
   isPlaying: false,
   currentStep: 0,
@@ -240,6 +242,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
 
   setBpm: (bpm) => set({ bpm }),
   setSwing: (swing) => set({ swing }),
+  setMasterTune: (hz) => set({ masterTune: hz }),
   setKit: (kit) => set({ kit, activeKits: [kit] }),
 
   toggleKit: (kit) =>
@@ -447,6 +450,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
       tracks: state.tracks,
       bpm: state.bpm,
       swing: state.swing,
+      masterTune: state.masterTune,
       stepCount: state.stepCount,
       kit: state.kit,
       activeKits: state.activeKits,
@@ -461,6 +465,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
       return {
         ...current,
         ...p,
+        masterTune: p.masterTune ?? 440,
         machineParams: {
           tr808: { ...d.tr808, ...p.machineParams?.tr808 },
           tr909: { ...d.tr909, ...p.machineParams?.tr909 },

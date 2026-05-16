@@ -135,12 +135,12 @@ export const MACHINE_TRACKS: Record<KitId, MachineTrack[]> = {
 // ── Default parameters ────────────────────────────────────────────────────────
 
 export const DEFAULT_MACHINE_PARAMS: MachineParams = {
-  tr808: { shuffle: 0, accentLevel: 0.3 },
+  tr808: { shuffle: 0, accentLevel: 0.3, kickTune: 0.5, tomLoTune: 0.5, tomHiTune: 0.5 },
   tr909: { shuffle: 0, accentLevel: 0.3, bdDecay: 0.4, sdSnappy: 0.5, ltDecay: 0.4, htDecay: 0.4, ohDecay: 0.6, cymTune: 0.5 },
   tr606: { accentLevel: 0.25 },
   tr707: { accentLevel: 0.25 },
-  tb303: { cutoff: 0.5, resonance: 0.4, envMod: 0.5, decay: 0.4, accent: 0.5, waveform: 'sawtooth' },
-  sh101: { vcfFreq: 0.6, vcfRes: 0.3, vcfEnv: 0.4, vcfMod: 0.2, subOsc: 0.3, waveform: 'pulse', portamento: 0, pitchBend: 0 },
+  tb303: { cutoff: 0.5, resonance: 0.4, envMod: 0.5, decay: 0.4, accent: 0.5, waveform: 'sawtooth', detune: 0.5, transpose: 0 },
+  sh101: { vcfFreq: 0.6, vcfRes: 0.3, vcfEnv: 0.4, vcfMod: 0.2, subOsc: 0.3, waveform: 'pulse', portamento: 0, pitchBend: 0, detune: 0.5, transpose: 0 },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

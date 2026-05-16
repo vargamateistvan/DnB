@@ -104,6 +104,7 @@ const mockTransport = {
 const mockContext = {
   resume: vi.fn().mockResolvedValue(undefined),
   state: 'running',
+  A4: 440,
 }
 
 export const Player = mockPlayer

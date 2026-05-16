@@ -16,6 +16,16 @@ function noteOneOctaveDown(note: string): string {
   return oct < 0 ? note : `${m[1]}${oct}`
 }
 
+function transposeNote(note: string, semitones: number): string {
+  if (semitones === 0) return note
+  try {
+    const midi = Tone.Frequency(note).toMidi()
+    return Tone.Frequency(midi + semitones, 'midi').toNote()
+  } catch {
+    return note
+  }
+}
+
 const TRIGGER_NOTES: Record<string, string> = {
   tr808_kick: 'C1', tr808_tom_lo: 'E1', tr808_tom_hi: 'A1', tr808_cowbell: 'G#1',
   tr909_kick: 'C1', tr909_tom_lo: 'E1', tr909_tom_hi: 'A1',
@@ -131,6 +141,7 @@ export function useAudioEngine() {
   const tracks = useSequencerStore((s) => s.tracks)
   const bpm = useSequencerStore((s) => s.bpm)
   const swing = useSequencerStore((s) => s.swing)
+  const masterTune = useSequencerStore((s) => s.masterTune)
   const maxStepCount = Math.max(...tracks.map((t) => t.steps.length), 16)
   const machineParams = useSequencerStore((s) => s.machineParams)
   const setCurrentStep = useSequencerStore((s) => s.setCurrentStep)
@@ -255,18 +266,29 @@ export function useAudioEngine() {
       sh101Filter.frequency.value = Math.max(50, 80 + p.vcfFreq * 7920)
       sh101Filter.Q.value = 1 + p.vcfRes * 11
     }
-    // TB-303 waveform
+    // TR-808 kick / tom pitch (detune in cents, ±1200 = ±1 octave)
+    const p808 = machineParams.tr808
+    const kick808 = synthsRef.current['tr808_kick']
+    if (kick808 instanceof Tone.MembraneSynth) kick808.detune.value = (p808.kickTune - 0.5) * 2400
+    const tomLo808 = synthsRef.current['tr808_tom_lo']
+    if (tomLo808 instanceof Tone.MembraneSynth) tomLo808.detune.value = (p808.tomLoTune - 0.5) * 2400
+    const tomHi808 = synthsRef.current['tr808_tom_hi']
+    if (tomHi808 instanceof Tone.MembraneSynth) tomHi808.detune.value = (p808.tomHiTune - 0.5) * 2400
+
+    // TB-303 waveform + fine detune
     const tb303Synth = synthsRef.current['tb303_bass']
     if (tb303Synth instanceof Tone.MonoSynth) {
       tb303Synth.oscillator.type = machineParams.tb303.waveform
+      tb303Synth.detune.value = (machineParams.tb303.detune - 0.5) * 100
     }
 
-    // SH-101 waveform + portamento + pitch bend
+    // SH-101 waveform + portamento + pitch bend + fine detune (combined)
     const sh101Synth = synthsRef.current['sh101_bass']
     if (sh101Synth instanceof Tone.MonoSynth) {
       sh101Synth.oscillator.type = machineParams.sh101.waveform
       sh101Synth.portamento = machineParams.sh101.portamento * 0.5
       sh101Synth.detune.value = (machineParams.sh101.pitchBend ?? 0) * 1200
+                               + (machineParams.sh101.detune - 0.5) * 100
     }
 
     // SH-101 sub oscillator level
@@ -295,6 +317,10 @@ export function useAudioEngine() {
       Tone.getTransport().swingSubdivision = '16n'
     }
   }, [machineParams])
+
+  // ── Master tune (A4 reference pitch) ─────────────────────────────────────
+  // BaseContext.A4 exists at runtime but is not typed in this Tone.js version
+  useEffect(() => { (Tone.getContext() as any).A4 = masterTune }, [masterTune])
 
   // ── BPM / Swing ───────────────────────────────────────────────────────────
   useEffect(() => { Tone.getTransport().bpm.value = bpm }, [bpm])
@@ -336,7 +362,11 @@ export function useAudioEngine() {
             ? Math.min(1, s.velocity + accentLevel * 0.3)
             : s.velocity
 
-          triggerSynth(synth, track.id, time, vel, s.note)
+          const transpose = track.id === 'tb303_bass' ? (mp.tb303.transpose ?? 0)
+                          : track.id === 'sh101_bass' ? (mp.sh101.transpose ?? 0)
+                          : 0
+          const playNote = transpose !== 0 && s.note ? transposeNote(s.note, transpose) : s.note
+          triggerSynth(synth, track.id, time, vel, playNote)
 
           // TR-909 amplitude envelope — shapes sample decay
           const ampEnv = ampEnvsRef.current[track.id]
@@ -345,7 +375,8 @@ export function useAudioEngine() {
           // SH-101 sub oscillator — trigger one octave below at subOsc level
           if (track.id === 'sh101_bass' && mp.sh101.subOsc > 0) {
             const subSynth = subOscRef.current['sh101_bass']
-            const subNote = noteOneOctaveDown(s.note ?? TRIGGER_NOTES['sh101_bass'] ?? 'C2')
+            const baseNote = transpose !== 0 && s.note ? playNote ?? s.note : (s.note ?? TRIGGER_NOTES['sh101_bass'] ?? 'C2')
+            const subNote = noteOneOctaveDown(baseNote as string)
             try { subSynth?.triggerAttackRelease(subNote, '16n', time, Math.min(1, vel * mp.sh101.subOsc)) } catch { /* skip */ }
           }
 

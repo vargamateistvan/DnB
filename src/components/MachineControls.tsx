@@ -244,6 +244,38 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
             </>
           )}
 
+          {/* TUNE: detune fader + transpose buttons */}
+          {sh101Section('TUNE',
+            <>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-mono text-[8px] tabular-nums" style={{ color: labelColor }}>
+                  {(() => { const ct = Math.round((p.detune - 0.5) * 100); return ct > 0 ? `+${ct}` : `${ct}` })()}ct
+                </span>
+                <input
+                  type="range" min={0} max={1} step={0.01} value={p.detune}
+                  onChange={(e) => setMachineParam('sh101', 'detune', Number(e.target.value))}
+                  style={{ writingMode: 'vertical-lr', direction: 'rtl', accentColor: accent, height: '56px', cursor: 'pointer' }}
+                />
+                <span className="font-mono text-[8px] font-bold uppercase" style={{ color: labelColor }}>DET</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-mono text-[9px] tabular-nums" style={{ color: accent }}>
+                  {(p.transpose ?? 0) > 0 ? `+${p.transpose}` : `${p.transpose ?? 0}`}st
+                </span>
+                <div className="flex gap-1">
+                  {[-12,-1,1,12].map((d) => (
+                    <button key={d}
+                      onClick={() => setMachineParam('sh101', 'transpose', Math.max(-12, Math.min(12, (p.transpose ?? 0) + d)))}
+                      className="font-mono text-[9px] font-bold transition-colors"
+                      style={{ background: 'rgba(0,0,0,0.3)', border: `1px solid ${theme.border}`, borderRadius: '2px', color: labelColor, padding: '2px 3px' }}
+                    >{d > 0 ? `+${d}` : d}</button>
+                  ))}
+                </div>
+                <span className="font-mono text-[8px] uppercase" style={{ color: labelColor }}>TRANSP</span>
+              </div>
+            </>
+          )}
+
           <div className="self-stretch w-px opacity-30" style={{ background: theme.border }} />
 
           <PresetBar kitId="sh101" accent={accent} border={theme.border} labelColor={labelColor} onPlay={onPlay} onStop={onStop} />
@@ -309,6 +341,35 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
 
           <div className="w-px self-stretch opacity-30" style={{ background: panelBorder }} />
 
+          {/* Detune + Transpose */}
+          <div className="flex flex-col items-center gap-2">
+            <span className="font-mono text-[9px] uppercase tracking-widest" style={{ color: panelLabel }}>TUNE</span>
+            <div className="flex items-end gap-3">
+              <KnobControl
+                value={p.detune} label="DETUNE" color={panelAccent}
+                trackColor={knobTrack} bodyColor={knobBody} labelColor={panelLabel}
+                size={40} onChange={(v) => setMachineParam('tb303', 'detune', v)}
+              />
+              <div className="flex flex-col items-center gap-1 pb-1">
+                <span className="font-mono text-[9px] tabular-nums" style={{ color: panelAccent }}>
+                  {(p.transpose ?? 0) > 0 ? `+${p.transpose}` : `${p.transpose ?? 0}`}st
+                </span>
+                <div className="flex gap-1">
+                  {[-12,-1,1,12].map((d) => (
+                    <button key={d}
+                      onClick={() => setMachineParam('tb303', 'transpose', Math.max(-12, Math.min(12, (p.transpose ?? 0) + d)))}
+                      className="font-mono text-[9px] font-bold transition-colors"
+                      style={{ background: '#1a1a1a', border: `1px solid ${panelBorder}`, borderRadius: '2px', color: panelLabel, padding: '2px 4px' }}
+                    >{d > 0 ? `+${d}` : d}</button>
+                  ))}
+                </div>
+                <span className="font-mono text-[8px] uppercase" style={{ color: panelLabel }}>TRANSP</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-px self-stretch opacity-30" style={{ background: panelBorder }} />
+
           <PresetBar kitId="tb303" accent={panelAccent} border={panelBorder} labelColor={panelLabel} onPlay={onPlay} onStop={onStop} />
         </div>
       </div>
@@ -318,6 +379,11 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
   // ── TR-808 — rotary level knobs + global params ───────────────────────────
   if (kit === 'tr808') {
     const p = params.tr808
+    // ±1200 cents → display as semitone offset
+    const kickSt  = Math.round((p.kickTune  - 0.5) * 24)
+    const tomLoSt = Math.round((p.tomLoTune - 0.5) * 24)
+    const tomHiSt = Math.round((p.tomHiTune - 0.5) * 24)
+    function stLabel(st: number) { return st === 0 ? '0' : st > 0 ? `+${st}` : `${st}` }
     return (
       <div className="shrink-0 border-t overflow-x-auto" style={{ background: theme.panel, borderColor: theme.border }}>
         <div className="flex items-end gap-3 px-6 pt-2 pb-0 border-b" style={{ borderColor: theme.border, minWidth: 'max-content' }}>
@@ -325,6 +391,25 @@ export function MachineControls({ kitId, onPlay, onStop }: { readonly kitId?: Ki
           {divider()}
           {knob(p.accentLevel, 'ACCENT',  44, (v) => setMachineParam('tr808', 'accentLevel', v))}
           {knob(p.shuffle,     'SHUFFLE', 44, (v) => setMachineParam('tr808', 'shuffle',     v))}
+          {divider()}
+          {/* Tuning knobs */}
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-mono text-[8px] uppercase tracking-widest" style={{ color: labelColor }}>TUNING</span>
+            <div className="flex items-end gap-2">
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-mono text-[8px] tabular-nums" style={{ color: accent }}>{stLabel(kickSt)}st</span>
+                {knob(p.kickTune,  'BD TUNE', 36, (v) => setMachineParam('tr808', 'kickTune',  v))}
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-mono text-[8px] tabular-nums" style={{ color: accent }}>{stLabel(tomLoSt)}st</span>
+                {knob(p.tomLoTune, 'LT TUNE', 36, (v) => setMachineParam('tr808', 'tomLoTune', v))}
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-mono text-[8px] tabular-nums" style={{ color: accent }}>{stLabel(tomHiSt)}st</span>
+                {knob(p.tomHiTune, 'HT TUNE', 36, (v) => setMachineParam('tr808', 'tomHiTune', v))}
+              </div>
+            </div>
+          </div>
           {divider()}
           <PresetBar kitId="tr808" accent={accent} border={theme.border} labelColor={labelColor} onPlay={onPlay} onStop={onStop} />
         </div>
