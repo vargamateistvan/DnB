@@ -1,0 +1,147 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump — leave blank to auto-detect from commit messages'
+        required: false
+        default: ''
+        type: choice
+        options: ['', patch, minor, major]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history needed for git log
+
+      # ── 1. Find the latest semver tag ───────────────────────────────────────
+      - name: Get latest tag
+        id: tag
+        run: |
+          git fetch --tags
+          LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          echo "latest=${LATEST:-v0.0.0}" >> "$GITHUB_OUTPUT"
+
+      # ── 2. Determine bump type from conventional commits (or manual input) ──
+      - name: Detect bump type
+        id: bump
+        run: |
+          LATEST="${{ steps.tag.outputs.latest }}"
+          MANUAL="${{ inputs.bump }}"
+
+          if [ "$LATEST" = "v0.0.0" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${LATEST}..HEAD"
+          fi
+
+          COMMITS=$(git log "$RANGE" --pretty=format:"%s%n%b")
+
+          if [ -n "$MANUAL" ]; then
+            TYPE="$MANUAL"
+          elif echo "$COMMITS" | grep -qE '(BREAKING CHANGE|!:)'; then
+            TYPE="major"
+          elif echo "$COMMITS" | grep -qE '^feat(\([^)]+\))?!?:'; then
+            TYPE="minor"
+          elif echo "$COMMITS" | grep -qE '^(fix|perf)(\([^)]+\))?:'; then
+            TYPE="patch"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No releasable commits since $LATEST — skipping release."
+            exit 0
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "type=$TYPE" >> "$GITHUB_OUTPUT"
+
+      # ── 3. Compute the next version number ──────────────────────────────────
+      - name: Compute next version
+        id: version
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          V="${{ steps.tag.outputs.latest }}"
+          V="${V#v}"
+          MAJOR=$(echo "$V" | cut -d. -f1)
+          MINOR=$(echo "$V" | cut -d. -f2)
+          PATCH=$(echo "$V" | cut -d. -f3)
+          case "${{ steps.bump.outputs.type }}" in
+            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH+1)) ;;
+          esac
+          echo "tag=v${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
+
+      # ── 4. Build grouped release notes ──────────────────────────────────────
+      - name: Build release notes
+        id: notes
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          LATEST="${{ steps.tag.outputs.latest }}"
+          NEXT="${{ steps.version.outputs.tag }}"
+          REPO="${{ github.repository }}"
+
+          if [ "$LATEST" = "v0.0.0" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${LATEST}..HEAD"
+          fi
+
+          # Short hash + subject for each commit
+          LOG=$(git log "$RANGE" --pretty=format:"%h %s")
+
+          fmt_section() {
+            local label="$1" pattern="$2"
+            local lines
+            lines=$(echo "$LOG" | grep -E "^[0-9a-f]+ ${pattern}" | \
+              sed -E "s|^([0-9a-f]+) ${pattern} ?(.+)|- \2 ([\\1](https://github.com/${REPO}/commit/\\1))|")
+            if [ -n "$lines" ]; then
+              printf "### %s\n%s\n\n" "$label" "$lines"
+            fi
+          }
+
+          {
+            echo "## What's Changed"
+            echo ""
+            fmt_section "✨ Features"     'feat(\([^)]+\))?!?:'
+            fmt_section "🐛 Bug Fixes"    'fix(\([^)]+\))?:'
+            fmt_section "⚡ Performance"  'perf(\([^)]+\))?:'
+            fmt_section "♻️  Refactors"   'refactor(\([^)]+\))?:'
+            fmt_section "🔧 Chores"       'chore(\([^)]+\))?:'
+            fmt_section "📖 Docs"         'docs(\([^)]+\))?:'
+
+            # Anything that doesn't match a known prefix
+            OTHER=$(echo "$LOG" | \
+              grep -vE '^[0-9a-f]+ (feat|fix|perf|refactor|chore|docs|test|ci|build|style)(\([^)]+\))?!?:' | \
+              sed -E "s|^([0-9a-f]+) (.+)|- \2 ([\\1](https://github.com/${REPO}/commit/\\1))|")
+            if [ -n "$OTHER" ]; then
+              printf "### 📝 Other\n%s\n\n" "$OTHER"
+            fi
+
+            if [ "$LATEST" != "v0.0.0" ]; then
+              echo "**Full Changelog**: https://github.com/${REPO}/compare/${LATEST}...${NEXT}"
+            fi
+          } > /tmp/release-notes.md
+
+      # ── 5. Tag and publish GitHub release ───────────────────────────────────
+      - name: Create tag and release
+        if: steps.bump.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          TAG="${{ steps.version.outputs.tag }}"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+
+          gh release create "$TAG" \
+            --title "Release $TAG" \
+            --notes-file /tmp/release-notes.md
