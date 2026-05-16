@@ -290,14 +290,11 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
   const [showHelp, setShowHelp]     = useState(false)
   const [showSongs, setShowSongs]   = useState(false)
   const [recording, setRecording]   = useState(false)
+  const tapTimesRef  = useRef<number[]>([])
+  const tapResetRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { exportMidi, startRecording, stopRecording } = useExport(connectToRecorder)
   const { songs, saveSong, loadSong, deleteSong, renameSong } = useSongs()
   const { importMidi }              = useMidiImport()
-
-  const toggleRecord = useCallback(async () => {
-    if (recording) { await stopRecording(); setRecording(false) }
-    else           { await startRecording(); setRecording(true) }
-  }, [recording, startRecording, stopRecording])
 
   const bpm        = useSequencerStore((s) => s.bpm)
   const swing      = useSequencerStore((s) => s.swing)
@@ -308,6 +305,25 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
   const setSwing   = useSequencerStore((s) => s.setSwing)
   const setStepCount  = useSequencerStore((s) => s.setStepCount)
   const toggleKit  = useSequencerStore((s) => s.toggleKit)
+
+  const handleTap = useCallback(() => {
+    const now = Date.now()
+    const times = tapTimesRef.current
+    if (times.length > 0 && now - times[times.length - 1] > 2000) times.length = 0
+    times.push(now)
+    if (tapResetRef.current) clearTimeout(tapResetRef.current)
+    tapResetRef.current = setTimeout(() => { tapTimesRef.current = [] }, 2000)
+    if (times.length < 2) return
+    if (times.length > 8) times.splice(0, times.length - 8)
+    let total = 0
+    for (let i = 1; i < times.length; i++) total += times[i] - times[i - 1]
+    setBpm(Math.max(60, Math.min(220, Math.round(60000 / (total / (times.length - 1))))))
+  }, [setBpm])
+
+  const toggleRecord = useCallback(async () => {
+    if (recording) { await stopRecording(); setRecording(false) }
+    else           { await startRecording(); setRecording(true) }
+  }, [recording, startRecording, stopRecording])
 
   // ── Shared sub-elements ────────────────────────────────────────────────────
 
@@ -395,6 +411,11 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
             style={{ accentColor: '#fff' }}
           />
           <span className="font-mono text-sm font-bold tabular-nums w-9 text-right shrink-0" style={{ color: TEXT }}>{bpm}</span>
+          <button
+            onPointerDown={handleTap}
+            className="shrink-0 px-2 h-7 font-mono text-[10px] font-bold select-none"
+            style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM, touchAction: 'none' }}
+          >TAP</button>
         </div>
 
         <button
@@ -518,6 +539,11 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           style={{ accentColor: '#fff' }}
         />
         <span className="font-mono text-sm font-bold tabular-nums w-8" style={{ color: TEXT }}>{bpm}</span>
+        <button
+          onPointerDown={handleTap}
+          className="px-2 h-5 font-mono text-[10px] font-bold select-none shrink-0"
+          style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM, touchAction: 'none' }}
+        >TAP</button>
       </div>
 
       {/* Swing */}

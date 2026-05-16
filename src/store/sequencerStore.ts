@@ -34,6 +34,21 @@ function setVelocityAt(steps: Step[], index: number, velocity: number): Step[] {
   return steps.map((s, i) => (i === index ? { ...s, velocity } : s))
 }
 
+function setProbabilityAt(steps: Step[], index: number, probability: number): Step[] {
+  return steps.map((s, i) => (i === index ? { ...s, probability } : s))
+}
+
+// ── Undo / redo history (module-level, not persisted) ─────────────────────────
+const MAX_HISTORY = 50
+let _history: Track[][] = []
+let _future:  Track[][] = []
+
+function pushHistory(tracks: Track[]) {
+  _history.push(tracks.map((t) => ({ ...t, steps: t.steps.map((s) => ({ ...s })) })))
+  if (_history.length > MAX_HISTORY) _history.shift()
+  _future = []
+}
+
 function resizeSteps(steps: Step[], stepCount: StepCount): Step[] {
   if (steps.length === stepCount) return steps
   if (stepCount > steps.length) {
@@ -172,6 +187,9 @@ interface SequencerActions {
   randomize: (kitId?: KitId) => void
   clearMachine: (kitId: KitId) => void
   setActivePreset: (kitId: KitId, index: number | null) => void
+  setStepProbability: (trackId: string, stepIndex: number, probability: number) => void
+  undo: () => void
+  redo: () => void
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────────
@@ -194,12 +212,14 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
 
   loadState: (partial) => set(partial),
 
-  toggleStep: (trackId, stepIndex) =>
+  toggleStep: (trackId, stepIndex) => {
+    pushHistory(get().tracks)
     set((state) => ({
       tracks: state.tracks.map((t) =>
         t.id === trackId ? { ...t, steps: toggleStepAt(t.steps, stepIndex) } : t
       ),
-    })),
+    }))
+  },
 
   setStepVelocity: (trackId, stepIndex, velocity) =>
     set((state) => ({
@@ -342,7 +362,8 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
   setActivePreset: (kitId, index) =>
     set((state) => ({ activePresets: { ...state.activePresets, [kitId]: index } })),
 
-  loadPreset: (preset) =>
+  loadPreset: (preset) => {
+    pushHistory(get().tracks)
     set((state) => {
       if (preset === 'clear') {
         return { tracks: state.tracks.map((t) => ({ ...t, steps: makeSteps(state.stepCount) })) }
@@ -353,9 +374,11 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
           return { ...t, steps: applyAmenPreset(state.stepCount, activeIndices) }
         }),
       }
-    }),
+    })
+  },
 
-  loadMachinePreset: (kitId, preset) =>
+  loadMachinePreset: (kitId, preset) => {
+    pushHistory(get().tracks)
     set((state) => {
       const kitTrackIds = new Set(MACHINE_TRACKS[kitId].map((t) => t.id))
       return {
@@ -363,9 +386,11 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
           kitTrackIds.has(t.id) ? applyPresetSteps(t, preset.tracks[t.id]) : t
         ),
       }
-    }),
+    })
+  },
 
-  randomize: (kitId) =>
+  randomize: (kitId) => {
+    pushHistory(get().tracks)
     set((state) => {
       const targetKit = kitId ?? state.kit
       const machineTids = new Set(MACHINE_TRACKS[targetKit].map((m) => m.id as string))
@@ -376,9 +401,11 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
           return { ...t, steps: randomizeTrack(t.id, state.stepCount, isBass) }
         }),
       }
-    }),
+    })
+  },
 
-  clearMachine: (kitId) =>
+  clearMachine: (kitId) => {
+    pushHistory(get().tracks)
     set((state) => {
       const machineTids = new Set(MACHINE_TRACKS[kitId].map((m) => m.id as string))
       return {
@@ -387,6 +414,30 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
         ),
         activePresets: { ...state.activePresets, [kitId]: null },
       }
+    })
+  },
+
+  setStepProbability: (trackId, stepIndex, probability) =>
+    set((state) => ({
+      tracks: state.tracks.map((t) =>
+        t.id === trackId ? { ...t, steps: setProbabilityAt(t.steps, stepIndex, probability) } : t
+      ),
+    })),
+
+  undo: () =>
+    set((state) => {
+      if (_history.length === 0) return {}
+      const prev = _history.pop()!
+      _future.push(state.tracks.map((t) => ({ ...t, steps: t.steps.map((s) => ({ ...s })) })))
+      return { tracks: prev }
+    }),
+
+  redo: () =>
+    set((state) => {
+      if (_future.length === 0) return {}
+      const next = _future.pop()!
+      _history.push(state.tracks.map((t) => ({ ...t, steps: t.steps.map((s) => ({ ...s })) })))
+      return { tracks: next }
     }),
   }),
   {

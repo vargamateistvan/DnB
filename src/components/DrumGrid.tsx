@@ -1,8 +1,10 @@
 import type { CSSProperties } from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import type { KitId } from '../types'
+
+type Popover = { trackId: string; stepIdx: number; x: number; y: number }
 
 const BTN_SIZE = 28
 
@@ -165,10 +167,24 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
   const currentStep = useSequencerStore((s) => s.currentStep)
   const isPlaying = useSequencerStore((s) => s.isPlaying)
   const toggleStep = useSequencerStore((s) => s.toggleStep)
+  const setStepVelocity = useSequencerStore((s) => s.setStepVelocity)
+  const setStepProbability = useSequencerStore((s) => s.setStepProbability)
   const toggleMute = useSequencerStore((s) => s.toggleMute)
   const addTrack = useSequencerStore((s) => s.addTrack)
   const removeTrack = useSequencerStore((s) => s.removeTrack)
   const trackKits = useSequencerStore((s) => s.trackKits)
+
+  const [popover, setPopover] = useState<Popover | null>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!popover) return
+    const handler = (e: PointerEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) setPopover(null)
+    }
+    window.addEventListener('pointerdown', handler)
+    return () => window.removeEventListener('pointerdown', handler)
+  }, [popover])
 
   const theme = MACHINE_THEMES[kitId]
   const machineTrackDefs = MACHINE_TRACKS[kitId]
@@ -293,10 +309,16 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                         trackTheme.stepActive, trackTheme.stepInactive, trackTheme.stepBeat
                       )
 
+                      const prob = step?.probability
                       return (
                         <button
                           key={stepIdx}
                           onClick={() => toggleStep(track.id, stepIdx)}
+                          onContextMenu={(e) => {
+                            if (!isActive) return
+                            e.preventDefault()
+                            setPopover({ trackId: track.id, stepIdx, x: e.clientX, y: e.clientY })
+                          }}
                           className="relative select-none"
                           style={{
                             width: `${btnSize}px`,
@@ -305,7 +327,14 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
                             cursor: 'pointer',
                             ...css,
                           }}
-                        />
+                        >
+                          {isActive && prob !== undefined && prob < 1 && (
+                            <span
+                              className="absolute inset-0 flex items-end justify-center pointer-events-none"
+                              style={{ fontSize: '6px', color: 'rgba(255,255,255,0.8)', paddingBottom: '2px', lineHeight: 1 }}
+                            >{Math.round(prob * 100)}%</span>
+                          )}
+                        </button>
                       )
                     })}
                   </div>
@@ -325,6 +354,44 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
       </div>
 
       </div>{/* end min-width scroll wrapper */}
+
+      {/* Step editor popover */}
+      {popover && (() => {
+        const pt = tracks.find((t) => t.id === popover.trackId)
+        const ps = pt?.steps[popover.stepIdx]
+        if (!pt || !ps) return null
+        const vel  = Math.round(ps.velocity * 100)
+        const prob = Math.round((ps.probability ?? 1) * 100)
+        return (
+          <div
+            ref={popoverRef}
+            className="fixed z-50 flex flex-col gap-2.5 p-3"
+            style={{
+              left: popover.x, top: popover.y,
+              transform: 'translate(-50%, 8px)',
+              background: '#1c1c1c', border: '1px solid #333',
+              borderRadius: '5px', minWidth: '170px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {[
+              { label: 'VELOCITY', value: vel,  onChange: (v: number) => setStepVelocity(pt.id, popover.stepIdx, v / 100) },
+              { label: 'PROB %',   value: prob, onChange: (v: number) => setStepProbability(pt.id, popover.stepIdx, v / 100) },
+            ].map(({ label, value, onChange }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className="font-mono text-[9px] uppercase w-16 shrink-0" style={{ color: '#555' }}>{label}</span>
+                <input
+                  type="range" min={0} max={100} value={value}
+                  onChange={(e) => onChange(Number(e.target.value))}
+                  className="flex-1" style={{ accentColor: '#fff' }}
+                />
+                <span className="font-mono text-[9px] w-7 text-right shrink-0 tabular-nums" style={{ color: '#ccc' }}>{value}%</span>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Machine name watermark */}
       <div

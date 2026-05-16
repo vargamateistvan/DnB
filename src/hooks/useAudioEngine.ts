@@ -136,6 +136,13 @@ export function useAudioEngine() {
   const setCurrentStep = useSequencerStore((s) => s.setCurrentStep)
   const setPlaying = useSequencerStore((s) => s.setPlaying)
 
+  // ── Resume AudioContext on first user gesture ────────────────────────────
+  useEffect(() => {
+    const resume = () => { Tone.start().catch(() => { /* ignore */ }); document.removeEventListener('pointerdown', resume, true) }
+    document.addEventListener('pointerdown', resume, true)
+    return () => document.removeEventListener('pointerdown', resume, true)
+  }, [])
+
   // ── Init: master chain + all per-kit synths ──────────────────────────────
   useEffect(() => {
     const master = new Tone.Compressor(-6, 4)
@@ -319,6 +326,7 @@ export function useAudioEngine() {
           if (track.muted) return
           const s = track.steps[step % track.steps.length]
           if (!s?.active) return
+          if (s.probability !== undefined && s.probability < 1 && Math.random() >= s.probability) return
           const synth = synthsRef.current[track.id]
           if (!synth) return
 

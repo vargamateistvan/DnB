@@ -12,6 +12,18 @@ export default function App() {
   const { play, stop, triggerPad, connectToRecorder } = useAudioEngine()
   const activeKits = useSequencerStore((s) => s.activeKits)
   const reorderKit = useSequencerStore((s) => s.reorderKit)
+  const undo = useSequencerStore((s) => s.undo)
+  const redo = useSequencerStore((s) => s.redo)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo() }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undo, redo])
 
   // ── Desktop drag-to-reorder ──────────────────────────────────────────────
   const dragKitRef   = useRef<KitId | null>(null)

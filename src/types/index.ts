@@ -6,8 +6,9 @@ export type SynthType = 'membrane' | 'noise' | 'metal' | 'synth' | 'mono'
 
 export interface Step {
   active: boolean
-  velocity: number // 0–1
-  note?: string    // per-step note override (bass lines)
+  velocity: number    // 0–1
+  probability?: number // 0–1, undefined = always plays
+  note?: string       // per-step note override (bass lines)
 }
 
 export interface Track {
