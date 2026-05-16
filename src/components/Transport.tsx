@@ -3,6 +3,7 @@ import * as Tone from 'tone'
 import { useSequencerStore } from '../store/sequencerStore'
 import { KIT_LIST } from '../kits'
 import { MACHINE_THEMES } from '../machines'
+import { Oscilloscope } from './Oscilloscope'
 import { useExport } from '../hooks/useExport'
 import { useSongs, type SongEntry } from '../hooks/useSongs'
 import { useMidiImport } from '../hooks/useMidiImport'
@@ -712,6 +713,9 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Oscilloscope */}
+      <Oscilloscope width={100} height={24} />
 
       {/* Right: MIDI + record + menu */}
       <div className="flex items-center gap-3 ml-auto shrink-0">
