@@ -14,6 +14,7 @@ const GRP = 6    // px — gap between beat groups
 // Equilateral ▲ centered in a square cell: height = (√3/2)×width ≈ 86.6%, vertical pad ≈ 6.7%
 const TRIANGLE = 'polygon(50% 6.7%, 0% 93.3%, 100% 93.3%)'
 
+
 const KIT_NAMES: Record<KitId, string> = {
   sh101: 'SH-101', tb303: 'TB-303', tr808: 'TR-808',
   tr909: 'TR-909', tr606: 'TR-606', tr707: 'TR-707',
@@ -31,10 +32,13 @@ export function PianoRollGrid({ kitId }: Props) {
   const toggleStep  = useSequencerStore((s) => s.toggleStep)
   const setStepNote = useSequencerStore((s) => s.setStepNote)
 
-  const theme     = MACHINE_THEMES[kitId]
+  const machineParams = useSequencerStore((s) => s.machineParams)
+
+  const theme       = MACHINE_THEMES[kitId]
   const bassTrackId = MACHINE_TRACKS[kitId][0].id
-  const bassTrack = tracks.find((t) => t.id === bassTrackId)
-  const isTb303   = kitId === 'tb303'
+  const bassTrack   = tracks.find((t) => t.id === bassTrackId)
+  const isTb303     = kitId === 'tb303'
+  const tb303Square = isTb303 && machineParams.tb303.waveform === 'square'
 
   const trackStepCount = bassTrack?.steps.length ?? 16
   const groups: number[][] = []
@@ -132,52 +136,54 @@ export function PianoRollGrid({ kitId }: Props) {
 
                       const isHit = isCurrent && isActive
 
-                      // ── TB-303: variable-size triangles ──────────────────
+                      const clickHandler = () => {
+                        const active = step?.active ?? false
+                        const note   = step?.note ?? 'C2'
+                        if (!active) {
+                          toggleStep(bassTrackId, stepIdx)
+                          setStepNote(bassTrackId, stepIdx, rowNote)
+                        } else if (note === rowNote) {
+                          toggleStep(bassTrackId, stepIdx)
+                        } else {
+                          setStepNote(bassTrackId, stepIdx, rowNote)
+                        }
+                      }
+                      const clickTitle = isActive ? 'Click: deactivate'
+                        : isOtherNote ? `Move note to ${rowNote}`
+                        : `Activate at ${rowNote}`
+
+                      // ── TB-303: triangles or squares based on waveform ────
                       if (isTb303) {
-                        let triScale: number
-                        if (isHit)            triScale = 1.05
-                        else if (isActive)    triScale = 0.80
-                        else if (isOtherNote) triScale = 0.42
-                        else                  triScale = 0.42
+                        const clipPath = tb303Square ? undefined : TRIANGLE
+                        const borderRadius = tb303Square ? '1px' : undefined
 
-                        // Active triangle matches chip color; inactive uses chip at lower opacity
-                        let triColor: string
-                        if (isActive)         triColor = isSharp ? '#111' : 'rgba(255,255,255,0.82)'
-                        else if (isOtherNote) triColor = isSharp ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.44)'
-                        else if (isBeat1)     triColor = isSharp ? 'rgba(0,0,0,0.52)' : 'rgba(255,255,255,0.38)'
-                        else                  triColor = isSharp ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.20)'
+                        let scale: number
+                        if (isHit)            scale = 1.05
+                        else if (isActive)    scale = 0.80
+                        else if (isOtherNote) scale = 0.42
+                        else                  scale = 0.42
 
-                        const currentHighlight = isSharp ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.35)'
-                        const curColor = (isCurrent && !isActive) ? currentHighlight : triColor
+                        let color: string
+                        if (isActive)         color = isSharp ? '#111' : 'rgba(255,255,255,0.82)'
+                        else if (isOtherNote) color = isSharp ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.44)'
+                        else if (isBeat1)     color = isSharp ? 'rgba(0,0,0,0.52)' : 'rgba(255,255,255,0.38)'
+                        else                  color = isSharp ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.20)'
+                        if (isCurrent && !isActive) color = isSharp ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.35)'
 
                         return (
                           <button
                             key={stepIdx}
-                            onClick={() => {
-                              const active = step?.active ?? false
-                              const note   = step?.note ?? 'C2'
-                              if (!active) {
-                                toggleStep(bassTrackId, stepIdx)
-                                setStepNote(bassTrackId, stepIdx, rowNote)
-                              } else if (note === rowNote) {
-                                toggleStep(bassTrackId, stepIdx)
-                              } else {
-                                setStepNote(bassTrackId, stepIdx, rowNote)
-                              }
-                            }}
-                            title={
-                              isActive ? 'Click: deactivate'
-                              : isOtherNote ? `Move note to ${rowNote}`
-                              : `Activate at ${rowNote}`
-                            }
+                            onClick={clickHandler}
+                            title={clickTitle}
                             className="select-none shrink-0"
                             style={{
                               width: `${BTN}px`,
                               height: `${BTN}px`,
-                              clipPath: TRIANGLE,
-                              backgroundColor: curColor,
+                              clipPath,
+                              borderRadius,
+                              backgroundColor: color,
                               border: 'none',
-                              transform: `scale(${triScale})`,
+                              transform: `scale(${scale})`,
                               transition: isHit
                                 ? 'transform 35ms ease-out'
                                 : 'transform 120ms ease, background-color 80ms',
@@ -215,23 +221,8 @@ export function PianoRollGrid({ kitId }: Props) {
                       return (
                         <button
                           key={stepIdx}
-                          onClick={() => {
-                            const active = step?.active ?? false
-                            const note   = step?.note ?? 'C2'
-                            if (!active) {
-                              toggleStep(bassTrackId, stepIdx)
-                              setStepNote(bassTrackId, stepIdx, rowNote)
-                            } else if (note === rowNote) {
-                              toggleStep(bassTrackId, stepIdx)
-                            } else {
-                              setStepNote(bassTrackId, stepIdx, rowNote)
-                            }
-                          }}
-                          title={
-                            isActive ? 'Click: deactivate'
-                            : isOtherNote ? `Move note to ${rowNote}`
-                            : `Activate at ${rowNote}`
-                          }
+                          onClick={clickHandler}
+                          title={clickTitle}
                           className="select-none shrink-0 transition-all"
                           style={{
                             width: `${BTN}px`,
