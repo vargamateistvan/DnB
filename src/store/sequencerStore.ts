@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Step, Track, TrackId, KitId, SequencerState, MachineParams } from '../types'
 import { DEFAULT_MACHINE_PARAMS, MACHINE_TRACKS } from '../machines'
 import type { MachinePreset, PresetStep } from '../presets'
+import type { SongPreset } from '../songPresets'
 
 type StepCount = 16 | 32 | 64
 
@@ -189,6 +190,7 @@ interface SequencerActions {
   setActivePreset: (kitId: KitId, index: number | null) => void
   setStepProbability: (trackId: string, stepIndex: number, probability: number) => void
   setMasterTune: (hz: number) => void
+  loadSongPreset: (preset: SongPreset) => void
   undo: () => void
   redo: () => void
 }
@@ -426,6 +428,36 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
         t.id === trackId ? { ...t, steps: setProbabilityAt(t.steps, stepIndex, probability) } : t
       ),
     })),
+
+  loadSongPreset: (preset) => {
+    pushHistory(get().tracks)
+    const sc = (preset.stepCount ?? 16) as 16 | 32 | 64
+    set((state) => {
+      const newTracks = state.tracks.map((t) => {
+        const resized = { ...t, steps: resizeSteps(t.steps, sc) }
+        if (t.id in preset.tracks) return applyPresetSteps(resized, preset.tracks[t.id])
+        return { ...resized, steps: makeSteps(sc) }
+      })
+      const d = DEFAULT_MACHINE_PARAMS
+      const mp = preset.machineParams
+      return {
+        tracks: newTracks,
+        bpm: preset.bpm,
+        stepCount: sc,
+        activeKits: preset.activeKits,
+        kit: preset.activeKits[0],
+        activePresets: {},
+        machineParams: {
+          tr808: { ...d.tr808, ...mp?.tr808 },
+          tr909: { ...d.tr909, ...mp?.tr909 },
+          tr606: { ...d.tr606, ...mp?.tr606 },
+          tr707: { ...d.tr707, ...mp?.tr707 },
+          tb303: { ...d.tb303, ...mp?.tb303 },
+          sh101: { ...d.sh101, ...mp?.sh101 },
+        },
+      }
+    })
+  },
 
   undo: () =>
     set((state) => {

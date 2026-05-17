@@ -7,6 +7,7 @@ import { Oscilloscope } from './Oscilloscope'
 import { useExport } from '../hooks/useExport'
 import { useSongs, type SongEntry } from '../hooks/useSongs'
 import { useMidiImport } from '../hooks/useMidiImport'
+import { SONG_PRESETS } from '../songPresets'
 
 interface Props {
   readonly onPlay: () => void
@@ -395,10 +396,11 @@ function SongLibraryDialog({
 }
 
 export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
-  const [menuOpen, setMenuOpen]     = useState(false)
-  const [showHelp, setShowHelp]     = useState(false)
-  const [showSongs, setShowSongs]   = useState(false)
-  const [recording, setRecording]   = useState(false)
+  const [menuOpen, setMenuOpen]         = useState(false)
+  const [showHelp, setShowHelp]         = useState(false)
+  const [showSongs, setShowSongs]       = useState(false)
+  const [showSongPresets, setShowSongPresets] = useState(false)
+  const [recording, setRecording]       = useState(false)
   const tapTimesRef  = useRef<number[]>([])
   const tapResetRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { exportMidi, startRecording, stopRecording } = useExport(connectToRecorder)
@@ -413,9 +415,10 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
   const activeKits = useSequencerStore((s) => s.activeKits)
   const setBpm     = useSequencerStore((s) => s.setBpm)
   const setSwing   = useSequencerStore((s) => s.setSwing)
-  const setMasterTune = useSequencerStore((s) => s.setMasterTune)
-  const setStepCount  = useSequencerStore((s) => s.setStepCount)
-  const toggleKit  = useSequencerStore((s) => s.toggleKit)
+  const setMasterTune  = useSequencerStore((s) => s.setMasterTune)
+  const setStepCount   = useSequencerStore((s) => s.setStepCount)
+  const toggleKit      = useSequencerStore((s) => s.toggleKit)
+  const loadSongPreset = useSequencerStore((s) => s.loadSongPreset)
 
   const handleTap = useCallback(() => {
     const now = Date.now()
@@ -604,7 +607,14 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
             />
           </div>
 
-          {/* Songs */}
+          {/* Presets + Songs */}
+          <button
+            onClick={() => { setMenuOpen(false); setShowSongPresets(true) }}
+            className="text-left font-mono text-[10px] uppercase tracking-widest transition-colors"
+            style={{ color: TEXT_DIM }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#f59e0b' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM }}
+          >★ Song presets</button>
           <button
             onClick={openSongs}
             className="text-left font-mono text-[10px] uppercase tracking-widest transition-colors"
@@ -767,6 +777,13 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           style={{ background: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '4px', minWidth: '200px' }}
         >
           <button
+            onClick={() => { setMenuOpen(false); setShowSongPresets(true) }}
+            className="text-left font-mono text-[10px] uppercase tracking-widest transition-colors"
+            style={{ color: TEXT_DIM }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#f59e0b' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM }}
+          >★ Song presets</button>
+          <button
             onClick={openSongs}
             className="text-left font-mono text-[10px] uppercase tracking-widest transition-colors"
             style={{ color: TEXT_DIM }}
@@ -810,6 +827,50 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           renameSong={renameSong}
           onClose={() => setShowSongs(false)}
         />
+      )}
+      {showSongPresets && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.75)' }}
+          onClick={() => setShowSongPresets(false)}
+        >
+          <div
+            className="flex flex-col gap-0 overflow-hidden"
+            style={{ background: '#141414', border: `1px solid #2a2a2a`, borderRadius: '6px', minWidth: '340px', maxWidth: '480px', width: '90vw', maxHeight: '80vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: '#2a2a2a' }}>
+              <span className="font-mono text-xs font-bold uppercase tracking-widest" style={{ color: '#f59e0b' }}>★ Song Presets</span>
+              <button onClick={() => setShowSongPresets(false)} className="font-mono text-lg leading-none" style={{ color: '#555' }}>×</button>
+            </div>
+            <div className="overflow-y-auto">
+              {SONG_PRESETS.map((preset, i) => (
+                <button
+                  key={i}
+                  onClick={() => { loadSongPreset(preset); setShowSongPresets(false) }}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors border-b group"
+                  style={{ borderColor: '#1e1e1e', background: 'transparent' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1e1e1e' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-mono text-xs font-bold" style={{ color: '#fff' }}>{preset.name}</span>
+                    <span className="font-mono text-[10px]" style={{ color: '#555' }}>{preset.artist}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex gap-1">
+                      {preset.activeKits.map((k) => (
+                        <span key={k} className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ background: MACHINE_THEMES[k].surface, color: MACHINE_THEMES[k].accent }}>{KIT_LIST.find((kit) => kit.id === k)?.label ?? k}</span>
+                      ))}
+                    </div>
+                    <span className="font-mono text-[10px] tabular-nums" style={{ color: '#555' }}>{preset.stepCount ?? 16}st</span>
+                    <span className="font-mono text-[10px] tabular-nums" style={{ color: '#f59e0b' }}>{preset.bpm}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </>
   )

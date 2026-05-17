@@ -130,6 +130,38 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       },
     },
     {
+      // Billie Jean — Michael Jackson
+      name: 'BILLIE J',
+      tracks: {
+        tr808_kick:         steps([0, 3, 8, 11]),
+        tr808_snare:        steps([4, 12]),
+        tr808_hihat_closed: steps([0, 2, 4, 6, 8, 10, 12, 14], 0.65),
+        tr808_hihat_open:   steps([], 0.6),
+        tr808_clap:         steps([4, 12], 0.85),
+        tr808_rim:          steps([2, 6, 10, 14], 0.5),
+        tr808_cowbell:      steps([]),
+        tr808_cymbal:       steps([]),
+        tr808_tom_lo:       steps([]),
+        tr808_tom_hi:       steps([]),
+      },
+    },
+    {
+      // Planet Rock — Afrika Bambaataa
+      name: 'PLANET R',
+      tracks: {
+        tr808_kick:         steps([0, 4, 8, 12]),
+        tr808_snare:        steps([4, 12]),
+        tr808_hihat_closed: steps([0, 2, 4, 6, 8, 10, 12, 14], 0.65),
+        tr808_hihat_open:   steps([]),
+        tr808_clap:         steps([2, 6, 10, 14], 0.8),
+        tr808_rim:          steps([2, 10], 0.55),
+        tr808_cowbell:      steps([0, 4, 8, 12], 0.7),
+        tr808_cymbal:       steps([]),
+        tr808_tom_lo:       steps([]),
+        tr808_tom_hi:       steps([]),
+      },
+    },
+    {
       // Typical R&B slow jam groove
       name: 'R&B JAM',
       tracks: {
@@ -250,6 +282,36 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       },
     },
     {
+      // One More Time — Daft Punk
+      name: 'ONE MORE',
+      tracks: {
+        tr909_kick:         steps([0, 4, 8, 12]),
+        tr909_snare:        steps([4, 12]),
+        tr909_hihat_closed: steps([0, 2, 4, 6, 8, 10, 12, 14], 0.65),
+        tr909_hihat_open:   steps([2, 6, 10, 14], 0.6),
+        tr909_clap:         steps([2, 6, 10, 14], 0.75),
+        tr909_rim:          steps([]),
+        tr909_tom_lo:       steps([]),
+        tr909_tom_hi:       steps([]),
+        tr909_cymbal:       steps([0], 0.45),
+      },
+    },
+    {
+      // Da Funk — Daft Punk
+      name: 'DA FUNK',
+      tracks: {
+        tr909_kick:         steps([0, 3, 8, 11]),
+        tr909_snare:        steps([4, 12]),
+        tr909_hihat_closed: steps([0, 2, 4, 6, 8, 10, 12, 14], 0.65),
+        tr909_hihat_open:   steps([6, 14], 0.6),
+        tr909_clap:         steps([4, 12], 0.85),
+        tr909_rim:          steps([2, 6, 10, 14], 0.5),
+        tr909_tom_lo:       steps([7], 0.6),
+        tr909_tom_hi:       steps([3, 11], 0.55),
+        tr909_cymbal:       steps([]),
+      },
+    },
+    {
       // Hard-driving rave / hardcore feel
       name: 'RAVE',
       tracks: {
@@ -352,6 +414,19 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
         tr606_cymbal:       steps([0, 8], 0.6),
         tr606_tom_lo:       steps([6, 14], 0.7),
         tr606_tom_hi:       steps([2, 10], 0.65),
+      },
+    },
+    {
+      // Personal Jesus — Depeche Mode
+      name: 'PERS JES',
+      tracks: {
+        tr606_kick:         steps([0, 4, 8, 12]),
+        tr606_snare:        steps([4, 10, 12, 14], 0.9),
+        tr606_hihat_closed: steps([0, 2, 4, 6, 8, 10, 12, 14], 0.7),
+        tr606_hihat_open:   steps([6, 14], 0.6),
+        tr606_cymbal:       steps([0, 8], 0.5),
+        tr606_tom_lo:       steps([]),
+        tr606_tom_hi:       steps([2, 10], 0.6),
       },
     },
     {
@@ -467,6 +542,36 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
         tr707_cymbal:       steps([0, 8], 0.5),
         tr707_rim:          steps([6, 14], 0.5),
         tr707_clap:         steps([4, 8, 12], 0.85),
+        tr707_tom_lo:       steps([]),
+        tr707_tom_hi:       steps([]),
+      },
+    },
+    {
+      // Safety Dance — Men Without Hats
+      name: 'SAFETY D',
+      tracks: {
+        tr707_kick:         steps([0, 8]),
+        tr707_snare:        steps([4, 12]),
+        tr707_hihat_closed: steps([0, 2, 4, 6, 8, 10, 12, 14], 0.65),
+        tr707_hihat_open:   steps([6, 14], 0.6),
+        tr707_cymbal:       steps([0, 8], 0.5),
+        tr707_rim:          steps([6, 14], 0.5),
+        tr707_clap:         steps([4, 12], 0.8),
+        tr707_tom_lo:       steps([10, 14], 0.6),
+        tr707_tom_hi:       steps([2], 0.55),
+      },
+    },
+    {
+      // Harder Better Faster Stronger — Daft Punk
+      name: 'HARDER',
+      tracks: {
+        tr707_kick:         steps([0, 4, 8, 12]),
+        tr707_snare:        steps([4, 12]),
+        tr707_hihat_closed: steps([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], 0.6),
+        tr707_hihat_open:   steps([2, 10], 0.65),
+        tr707_cymbal:       steps([0, 8], 0.5),
+        tr707_rim:          steps([6, 14], 0.5),
+        tr707_clap:         steps([4, 12], 0.85),
         tr707_tom_lo:       steps([]),
         tr707_tom_hi:       steps([]),
       },
@@ -612,6 +717,56 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       },
     },
     {
+      // Voodoo Ray — A Guy Called Gerald
+      name: 'VOODOO R',
+      tracks: {
+        tb303_bass: bassSteps([
+          [0,  'A#2', 0.9],
+          [1,  'A#2', 0.7],
+          [4,  'D#2', 0.85],
+          [6,  'C2',  0.8],
+          [8,  'A#2', 0.9],
+          [9,  'G2',  0.7],
+          [12, 'D#2', 0.85],
+          [14, 'C2',  0.8],
+          [15, 'A#2', 0.65],
+        ]),
+      },
+    },
+    {
+      // Around the World — Daft Punk (303 bass riff)
+      name: 'ATW 303',
+      tracks: {
+        tb303_bass: bassSteps([
+          [0,  'D2',  0.9],
+          [2,  'D2',  0.75],
+          [4,  'G2',  0.85],
+          [6,  'F2',  0.8],
+          [8,  'D2',  0.9],
+          [10, 'D2',  0.75],
+          [12, 'A2',  0.85],
+          [13, 'G2',  0.7],
+          [14, 'F2',  0.8],
+        ]),
+      },
+    },
+    {
+      // Can You Feel It — Larry Heard / Mr Fingers
+      name: 'MR FNGRS',
+      tracks: {
+        tb303_bass: bassSteps([
+          [0,  'A2',  0.85],
+          [4,  'G2',  0.8],
+          [6,  'E2',  0.75],
+          [8,  'D2',  0.85],
+          [10, 'C2',  0.8],
+          [12, 'D2',  0.8],
+          [14, 'E2',  0.75],
+          [15, 'G2',  0.7],
+        ]),
+      },
+    },
+    {
       // Melodic minor acid line
       name: 'MINOR',
       tracks: {
@@ -737,6 +892,55 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
           [12, 'C2',  0.8],
           [14, 'Bb1', 0.7],
           [15, 'Ab1', 0.65],
+        ]),
+      },
+    },
+    {
+      // Just Can't Get Enough — Depeche Mode
+      name: 'JUST GT',
+      tracks: {
+        sh101_bass: bassSteps([
+          [0,  'A2',  0.85],
+          [2,  'A2',  0.7],
+          [4,  'D2',  0.8],
+          [6,  'E2',  0.75],
+          [8,  'A2',  0.85],
+          [10, 'A2',  0.7],
+          [12, 'D2',  0.8],
+          [14, 'E2',  0.75],
+        ]),
+      },
+    },
+    {
+      // Fade to Grey — Visage
+      name: 'FADE GRY',
+      tracks: {
+        sh101_bass: bassSteps([
+          [0,  'C2',  0.8],
+          [4,  'D#2', 0.75],
+          [6,  'F2',  0.7],
+          [8,  'G2',  0.8],
+          [10, 'F2',  0.7],
+          [12, 'D#2', 0.75],
+          [14, 'C2',  0.7],
+          [15, 'D2',  0.65],
+        ]),
+      },
+    },
+    {
+      // Get Lucky — Daft Punk
+      name: 'GET LCKY',
+      tracks: {
+        sh101_bass: bassSteps([
+          [0,  'B2',  0.85],
+          [3,  'D2',  0.75],
+          [4,  'F#2', 0.8],
+          [7,  'E2',  0.7],
+          [8,  'D2',  0.85],
+          [11, 'B2',  0.75],
+          [12, 'A2',  0.8],
+          [14, 'F#2', 0.75],
+          [15, 'E2',  0.65],
         ]),
       },
     },
