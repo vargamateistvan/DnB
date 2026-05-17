@@ -59,10 +59,38 @@ export function useExport(connectToRecorder: (recorder: Tone.Recorder) => void) 
 
   const stopRecording = useCallback(async () => {
     if (!recorderRef.current) return
-    const blob = await recorderRef.current.stop()
+    const webmBlob = await recorderRef.current.stop()
     recorderRef.current.dispose()
     recorderRef.current = null
-    downloadBlob(blob, 'dnb-loop.webm')
+
+    const arrayBuffer = await webmBlob.arrayBuffer()
+    const audioCtx = new AudioContext()
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer)
+    audioCtx.close()
+
+    const numChannels = decoded.numberOfChannels
+    const sampleRate = decoded.sampleRate
+    const numSamples = decoded.length
+    const blockAlign = numChannels * 2
+    const dataSize = numSamples * blockAlign
+    const buf = new ArrayBuffer(44 + dataSize)
+    const view = new DataView(buf)
+    const w = (o: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)) }
+    w(0, 'RIFF'); view.setUint32(4, 36 + dataSize, true); w(8, 'WAVE')
+    w(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true)
+    view.setUint16(22, numChannels, true); view.setUint32(24, sampleRate, true)
+    view.setUint32(28, sampleRate * blockAlign, true); view.setUint16(32, blockAlign, true)
+    view.setUint16(34, 16, true)
+    w(36, 'data'); view.setUint32(40, dataSize, true)
+    let offset = 44
+    for (let i = 0; i < numSamples; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        const s = Math.max(-1, Math.min(1, decoded.getChannelData(ch)[i]))
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+        offset += 2
+      }
+    }
+    downloadBlob(new Blob([buf], { type: 'audio/wav' }), 'dnb-loop.wav')
   }, [])
 
   return { exportMidi, startRecording, stopRecording }

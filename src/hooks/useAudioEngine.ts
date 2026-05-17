@@ -400,7 +400,7 @@ export function useAudioEngine() {
 
   const stop = useCallback(() => {
     Tone.getTransport().stop()
-    seqRef.current?.stop()
+    try { seqRef.current?.stop(Math.max(0, Tone.now())) } catch { /* float rounding */ }
     setCurrentStep(0)
     setPlaying(false)
   }, [setPlaying, setCurrentStep])
