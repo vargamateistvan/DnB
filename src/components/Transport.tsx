@@ -90,8 +90,9 @@ const MACHINES_INFO: { name: string; year: string; tagline: string; chipBg: stri
     items: [
       'Click a piano roll cell to set a note and activate that step',
       'Click an active cell on a different row to move the note',
-      'CUTOFF, RESONANCE, ENV MOD, DECAY, ACCENT knobs',
-      'WAVEFORM toggle (sawtooth / square) · DISTORTION · DELAY',
+      'CUTOFF, RESONANCE, ENV MOD, DECAY knobs shape the filter sweep',
+      'ACCENT — accented steps boost filter peak, extend decay and add grit',
+      'WAVEFORM toggle (sawtooth / square) · DISTORTION knob adds overdrive',
       'Pitch bender strip for live modulation',
     ],
   },
@@ -101,9 +102,10 @@ const MACHINES_INFO: { name: string; year: string; tagline: string; chipBg: stri
     tagline: 'Monophonic analog synth — warm leads & fat basslines.',
     items: [
       'Same 2-octave piano roll as the TB-303',
-      'VCF (cutoff, resonance) and VCA (ADSR) envelope controls',
-      'LFO rate and depth · PORTAMENTO glide slider',
-      'WAVEFORM toggle (pulse / sawtooth) · REVERB effect',
+      'VCF FREQ, RES, ENV knobs control the filter and its sweep depth',
+      'MOD fader — drives BBD chorus depth and PWM LFO speed simultaneously',
+      'SUB OSC adds a square wave one octave below the main oscillator',
+      'WAVEFORM toggle (pulse / sawtooth) · PORTAMENTO glide slider',
     ],
   },
 ]
@@ -134,9 +136,11 @@ const HOW_TO_SECTIONS: { title: string; items: string[] }[] = [
     items: [
       'TAP the TAP button 2+ times to set BPM from your rhythm',
       'SWG slider adds a shuffle/swing feel to the groove',
+      'A4 slider sets concert pitch from 432 to 444 Hz',
       'Choose 16, 32, 64, or 128 steps per pattern',
       'Ctrl+Z / Ctrl+Y (Cmd on Mac) — undo / redo pattern changes',
       'RND randomizes · AMEN loads the Amen break · CLR clears all steps',
+      'On desktop, BPM · SWG · A4 sliders live on the second header row',
     ],
   },
   {
@@ -152,7 +156,8 @@ const HOW_TO_SECTIONS: { title: string; items: string[] }[] = [
   {
     title: 'Sessions & Export',
     items: [
-      'SONGS — save and load named sessions (state also persists automatically)',
+      'SONGS — save and load named sessions (state also auto-persists in browser)',
+      '★ Song presets — load classic multi-machine patterns in one click',
       '↑MIDI imports a MIDI file into the active pattern',
       '↓MIDI exports the current pattern as a .mid file',
       '⏺ REC records audio output — click again to stop and download as .mp3',
@@ -164,6 +169,7 @@ const HOW_TO_SECTIONS: { title: string; items: string[] }[] = [
       'Use the bottom tab bar to switch between machines',
       'Drag the tab bar to reorder machines',
       'Tap Controls (▲) to reveal the machine control panel',
+      'Piano roll and drum grid cells resize automatically for touch screens',
     ],
   },
 ]
