@@ -111,12 +111,13 @@ function buildTR707(): Record<string, AnyToneSynth> {
 }
 
 // ─── TB-303 (1981) ──────────────────────────────────────────────────────────
-// MonoSynth with internal filter bypassed — external filter chain handles VCF
+// MonoSynth with internal filter bypassed — external filter chain handles VCF.
+// VCA is decay-only (sustain: 0) matching the real 303's plucked character.
 function buildTB303(): Record<string, AnyToneSynth> {
   return {
     tb303_bass: new Tone.MonoSynth({
       oscillator: { type: 'sawtooth' },
-      envelope: { attack: 0.001, decay: 0.3, sustain: 0.05, release: 0.1 },
+      envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.04 },
       filter: { type: 'lowpass', frequency: 20000, Q: 0 },
       filterEnvelope: { attack: 0.001, decay: 0.001, sustain: 1, release: 0.001, baseFrequency: 20000, octaves: 0, exponent: 1 },
     }),
@@ -146,12 +147,13 @@ export const KIT_SHORT: Record<KitId, string> = {
 }
 
 // ─── SH-101 (1982) ──────────────────────────────────────────────────────────
-// MonoSynth with portamento — sub oscillator managed separately in useAudioEngine
+// MonoSynth with portamento — sub oscillator managed separately in useAudioEngine.
+// Punchier ADSR than 303, with real sustain for held notes.
 function buildSH101(): Record<string, AnyToneSynth> {
   return {
     sh101_bass: new Tone.MonoSynth({
       oscillator: { type: 'pulse' },
-      envelope: { attack: 0.001, decay: 0.4, sustain: 0.1, release: 0.2 },
+      envelope: { attack: 0.002, decay: 0.25, sustain: 0.2, release: 0.12 },
       filter: { type: 'lowpass', frequency: 20000, Q: 0 },
       filterEnvelope: { attack: 0.001, decay: 0.001, sustain: 1, release: 0.001, baseFrequency: 20000, octaves: 0, exponent: 1 },
       portamento: 0,

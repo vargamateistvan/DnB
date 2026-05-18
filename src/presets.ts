@@ -8,6 +8,7 @@ export interface PresetStep {
 
 export interface MachinePreset {
   name: string
+  stepCount?: 16 | 32 | 64
   tracks: Partial<Record<string, PresetStep[]>>
 }
 
@@ -502,16 +503,27 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       },
     },
     {
-      // Blue Monday — New Order (707 + 909 hybrid feel)
+      // Blue Monday — New Order (LinnDrum pattern from MIDI, 32-step = 2-bar loop)
+      // Kick: beat1+2, machine-gun fill (steps 8-15), then every beat in bar 2
+      // Snare: beats 2&4 only | Hihat: paired 16ths on every "and"
       name: 'BLUE MON',
+      stepCount: 32,
       tracks: {
-        tr707_kick:         steps([0, 4, 8, 12]),
-        tr707_snare:        steps([4, 12]),
-        tr707_hihat_closed: steps([0, 2, 4, 6, 8, 10, 12, 14], 0.65),
-        tr707_hihat_open:   steps([2, 6, 10, 14], 0.6),
-        tr707_cymbal:       steps([0], 0.5),
+        tr707_kick: steps([
+          0, 4,                              // bar 1: beats 1 & 2
+          8, 9, 10, 11, 12, 13, 14, 15,     // bar 1: machine-gun fill (beats 3-4)
+          16, 20, 24, 28,                    // bar 2: every beat
+        ], 0.82),
+        tr707_snare:        steps([4, 12, 20, 28], 0.82),
+        tr707_hihat_closed: [
+          // Paired 16ths on every "and" — first hit louder, second softer
+          ...[ 2, 6,10,14,18,22,26,30].map(i => ({ index: i, velocity: 0.65 })),
+          ...[ 3, 7,11,15,19,23,27,31].map(i => ({ index: i, velocity: 0.52 })),
+        ],
+        tr707_hihat_open:   steps([]),
+        tr707_cymbal:       steps([]),
         tr707_rim:          steps([]),
-        tr707_clap:         steps([4, 12], 0.8),
+        tr707_clap:         steps([]),
         tr707_tom_lo:       steps([]),
         tr707_tom_hi:       steps([]),
       },
@@ -598,16 +610,16 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       name: 'ACID 1',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'C2',  0.9],
-          [2,  'C2',  0.7],
-          [3,  'C#2', 0.75],
-          [4,  'Eb2', 0.8],
-          [6,  'G2',  0.85],
-          [8,  'C2',  0.9],
-          [10, 'C2',  0.7],
-          [11, 'Bb1', 0.75],
-          [12, 'Ab1', 0.8],
-          [14, 'G1',  0.7],
+          [0,  'C2',  0.9],   // accented
+          [2,  'C2',  0.65],
+          [3,  'C#2', 0.65],
+          [4,  'Eb2', 0.9],   // accented
+          [6,  'G2',  0.9],   // accented
+          [8,  'C2',  0.9],   // accented
+          [10, 'C2',  0.65],
+          [11, 'Bb1', 0.65],
+          [12, 'Ab1', 0.9],   // accented
+          [14, 'G1',  0.65],
           [15, 'G1',  0.65],
         ]),
       },
@@ -616,15 +628,15 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       name: 'ACID 2',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'G1',  0.9],
-          [2,  'C2',  0.8],
-          [4,  'Eb2', 0.85],
-          [6,  'G2',  0.9],
-          [8,  'G1',  0.85],
-          [10, 'Bb1', 0.8],
-          [12, 'C2',  0.85],
-          [14, 'Eb2', 0.8],
-          [15, 'D2',  0.7],
+          [0,  'G1',  0.9],   // accented
+          [2,  'C2',  0.65],
+          [4,  'Eb2', 0.9],   // accented
+          [6,  'G2',  0.9],   // accented
+          [8,  'G1',  0.9],   // accented
+          [10, 'Bb1', 0.65],
+          [12, 'C2',  0.9],   // accented
+          [14, 'Eb2', 0.65],
+          [15, 'D2',  0.65],
         ]),
       },
     },
@@ -632,14 +644,14 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       name: 'TECHNO',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'C1',  0.9],
-          [4,  'C1',  0.85],
-          [6,  'C1',  0.8],
-          [7,  'Bb1', 0.75],
-          [8,  'C1',  0.9],
-          [12, 'C1',  0.85],
-          [14, 'G1',  0.75],
-          [15, 'F1',  0.7],
+          [0,  'C1',  0.9],   // accented
+          [4,  'C1',  0.9],   // accented
+          [6,  'C1',  0.65],
+          [7,  'Bb1', 0.65],
+          [8,  'C1',  0.9],   // accented
+          [12, 'C1',  0.9],   // accented
+          [14, 'G1',  0.65],
+          [15, 'F1',  0.65],
         ]),
       },
     },
@@ -647,52 +659,54 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       name: 'WALKING',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'C2',  0.85],
-          [2,  'D2',  0.75],
-          [4,  'Eb2', 0.8],
-          [6,  'F2',  0.75],
-          [8,  'G2',  0.85],
-          [10, 'F2',  0.75],
-          [12, 'Eb2', 0.8],
-          [14, 'D2',  0.75],
+          [0,  'C2',  0.9],   // accented — beat 1
+          [2,  'D2',  0.65],
+          [4,  'Eb2', 0.9],   // accented — beat 2
+          [6,  'F2',  0.65],
+          [8,  'G2',  0.9],   // accented — beat 3
+          [10, 'F2',  0.65],
+          [12, 'Eb2', 0.9],   // accented — beat 4
+          [14, 'D2',  0.65],
         ]),
       },
     },
     {
-      // Phuture "Acid Tracks" — rolling low pattern
+      // Phuture "Acid Tracks" — dense, repetitive, mostly root note
       name: 'ACID TRK',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'C1',  0.9],
-          [1,  'C1',  0.75],
-          [2,  'C1',  0.8],
-          [3,  'G1',  0.7],
-          [4,  'C1',  0.85],
-          [5,  'F1',  0.7],
-          [6,  'C1',  0.8],
-          [8,  'C1',  0.9],
-          [9,  'G1',  0.75],
-          [10, 'C1',  0.8],
-          [12, 'C1',  0.85],
-          [14, 'Bb1', 0.75],
+          [0,  'C1',  0.9],   // accented
+          [1,  'C1',  0.65],
+          [2,  'C1',  0.65],
+          [3,  'G1',  0.9],   // accented — the burp
+          [4,  'C1',  0.65],
+          [5,  'F1',  0.65],
+          [6,  'C1',  0.9],   // accented
+          [7,  'C1',  0.65],
+          [8,  'C1',  0.65],
+          [9,  'G1',  0.9],   // accented
+          [10, 'C1',  0.65],
+          [12, 'C1',  0.9],   // accented
+          [14, 'Bb1', 0.65],
+          [15, 'Ab1', 0.65],
         ]),
       },
     },
     {
-      // Josh Wink "Higher State of Consciousness" style
+      // Josh Wink "Higher State of Consciousness" — hypnotic single-note drone
       name: 'JOSH WNK',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'C2',  0.9],
-          [2,  'C2',  0.8],
-          [4,  'C2',  0.9],
-          [6,  'C2',  0.8],
-          [8,  'G1',  0.85],
-          [9,  'G1',  0.7],
-          [10, 'G1',  0.85],
-          [12, 'Bb1', 0.85],
-          [13, 'Bb1', 0.7],
-          [14, 'Bb1', 0.8],
+          [0,  'C2',  0.9],   // accented
+          [2,  'C2',  0.65],
+          [4,  'C2',  0.9],   // accented
+          [6,  'C2',  0.65],
+          [8,  'G1',  0.9],   // accented
+          [9,  'G1',  0.65],
+          [10, 'G1',  0.9],   // accented
+          [12, 'Bb1', 0.9],   // accented
+          [13, 'Bb1', 0.65],
+          [14, 'Bb1', 0.65],
         ]),
       },
     },
@@ -701,68 +715,68 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       name: 'SQUELCH',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'C2',  0.9],
-          [1,  'C2',  0.7],
-          [2,  'Eb2', 0.8],
-          [4,  'C2',  0.9],
+          [0,  'C2',  0.9],   // accented
+          [1,  'C2',  0.65],
+          [2,  'Eb2', 0.9],   // accented
+          [4,  'C2',  0.9],   // accented
           [5,  'C2',  0.65],
-          [6,  'G1',  0.75],
-          [8,  'C2',  0.9],
-          [9,  'Eb2', 0.7],
-          [12, 'C2',  0.9],
+          [6,  'G1',  0.65],
+          [8,  'C2',  0.9],   // accented
+          [9,  'Eb2', 0.65],
+          [12, 'C2',  0.9],   // accented
           [13, 'C2',  0.65],
-          [14, 'G1',  0.75],
-          [15, 'F1',  0.7],
+          [14, 'G1',  0.65],
+          [15, 'F1',  0.65],
         ]),
       },
     },
     {
-      // Voodoo Ray — A Guy Called Gerald
+      // Voodoo Ray — A Guy Called Gerald (Bb minor)
       name: 'VOODOO R',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'A#2', 0.9],
-          [1,  'A#2', 0.7],
-          [4,  'D#2', 0.85],
-          [6,  'C2',  0.8],
-          [8,  'A#2', 0.9],
-          [9,  'G2',  0.7],
-          [12, 'D#2', 0.85],
-          [14, 'C2',  0.8],
+          [0,  'A#2', 0.9],   // Bb — accented
+          [1,  'A#2', 0.65],
+          [4,  'D#2', 0.9],   // Eb — accented
+          [6,  'C2',  0.65],
+          [8,  'A#2', 0.9],   // Bb — accented
+          [9,  'G2',  0.65],
+          [12, 'D#2', 0.9],   // Eb — accented
+          [14, 'C2',  0.65],
           [15, 'A#2', 0.65],
         ]),
       },
     },
     {
-      // Around the World — Daft Punk (303 bass riff)
+      // Around the World — Daft Punk (G minor)
       name: 'ATW 303',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'D2',  0.9],
-          [2,  'D2',  0.75],
-          [4,  'G2',  0.85],
-          [6,  'F2',  0.8],
-          [8,  'D2',  0.9],
-          [10, 'D2',  0.75],
-          [12, 'A2',  0.85],
-          [13, 'G2',  0.7],
-          [14, 'F2',  0.8],
+          [0,  'G1',  0.9],   // G minor root — accented
+          [2,  'G1',  0.65],
+          [4,  'D2',  0.9],   // 5th — accented
+          [6,  'C2',  0.65],  // 4th
+          [8,  'G1',  0.9],   // root — accented
+          [10, 'G1',  0.65],
+          [12, 'A#1', 0.9],   // Bb — accented
+          [14, 'A2',  0.65],
+          [15, 'G1',  0.65],
         ]),
       },
     },
     {
-      // Can You Feel It — Larry Heard / Mr Fingers
+      // Can You Feel It — Larry Heard / Mr Fingers (deep house, A minor)
       name: 'MR FNGRS',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'A2',  0.85],
-          [4,  'G2',  0.8],
-          [6,  'E2',  0.75],
-          [8,  'D2',  0.85],
-          [10, 'C2',  0.8],
-          [12, 'D2',  0.8],
-          [14, 'E2',  0.75],
-          [15, 'G2',  0.7],
+          [0,  'A1',  0.9],   // accented
+          [4,  'G1',  0.9],   // accented
+          [6,  'E1',  0.65],
+          [8,  'D1',  0.9],   // accented
+          [10, 'C1',  0.65],
+          [12, 'D1',  0.9],   // accented
+          [14, 'E1',  0.65],
+          [15, 'G1',  0.65],
         ]),
       },
     },
@@ -771,15 +785,15 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       name: 'MINOR',
       tracks: {
         tb303_bass: bassSteps([
-          [0,  'A1',  0.9],
-          [2,  'C2',  0.8],
-          [4,  'D2',  0.85],
-          [6,  'Eb2', 0.8],
-          [8,  'E2',  0.85],
-          [10, 'G2',  0.9],
-          [12, 'A2',  0.85],
-          [14, 'G2',  0.75],
-          [15, 'E2',  0.7],
+          [0,  'A1',  0.9],   // accented
+          [2,  'C2',  0.65],
+          [4,  'D2',  0.9],   // accented
+          [6,  'Eb2', 0.65],
+          [8,  'E2',  0.9],   // accented
+          [10, 'G2',  0.65],
+          [12, 'A2',  0.9],   // accented
+          [14, 'G2',  0.65],
+          [15, 'E2',  0.65],
         ]),
       },
     },
@@ -787,18 +801,41 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
 
   sh101: [
     {
+      // Blue Monday — New Order (F minor, Moog Source sequence from MIDI)
+      // MIDI: 128 BPM, 2-bar loop: F3×6, C3×6 (bar1) | D3×12 (bar2)
+      // Rhythm per half-bar: 16th positions 0,2,3,4,6,7 (syncopated gallop)
+      // 32 steps = 2 bars at 16th-note resolution
       name: 'BLUE MON',
+      stepCount: 32,
       tracks: {
         sh101_bass: bassSteps([
-          [0,  'C2',  0.85],
-          [2,  'C2',  0.75],
-          [4,  'Eb2', 0.8],
-          [6,  'F2',  0.75],
-          [8,  'G2',  0.85],
-          [10, 'G2',  0.75],
-          [12, 'Eb2', 0.8],
-          [14, 'C2',  0.8],
-          [15, 'Bb1', 0.7],
+          // Bar 1: F3 (beats 1-2) — positions 0,2,3,4,6,7
+          [0,  'F3',  0.85],
+          [2,  'F3',  0.78],
+          [3,  'F3',  0.72],
+          [4,  'F3',  0.80],
+          [6,  'F3',  0.75],
+          [7,  'F3',  0.70],
+          // Bar 1: C3 (beats 3-4) — positions 8,10,11,12,14,15
+          [8,  'C3',  0.82],
+          [10, 'C3',  0.75],
+          [11, 'C3',  0.70],
+          [12, 'C3',  0.78],
+          [14, 'C3',  0.72],
+          [15, 'C3',  0.68],
+          // Bar 2: D3 throughout — positions 16,18,19,20,22,23,24,26,27,28,30,31
+          [16, 'D3',  0.85],
+          [18, 'D3',  0.78],
+          [19, 'D3',  0.72],
+          [20, 'D3',  0.80],
+          [22, 'D3',  0.75],
+          [23, 'D3',  0.70],
+          [24, 'D3',  0.82],
+          [26, 'D3',  0.75],
+          [27, 'D3',  0.70],
+          [28, 'D3',  0.78],
+          [30, 'D3',  0.72],
+          [31, 'D3',  0.68],
         ]),
       },
     },
@@ -912,18 +949,18 @@ export const MACHINE_PRESETS: Record<KitId, MachinePreset[]> = {
       },
     },
     {
-      // Fade to Grey — Visage
+      // Fade to Grey — Visage (Eb minor / D# minor)
       name: 'FADE GRY',
       tracks: {
         sh101_bass: bassSteps([
-          [0,  'C2',  0.8],
-          [4,  'D#2', 0.75],
-          [6,  'F2',  0.7],
-          [8,  'G2',  0.8],
-          [10, 'F2',  0.7],
-          [12, 'D#2', 0.75],
-          [14, 'C2',  0.7],
-          [15, 'D2',  0.65],
+          [0,  'D#2', 0.8],   // Eb — root
+          [4,  'G#1', 0.75],  // Ab
+          [6,  'A#1', 0.7],   // Bb
+          [8,  'D#2', 0.8],   // Eb
+          [10, 'G#2', 0.7],   // Ab (upper)
+          [12, 'D#2', 0.75],  // Eb
+          [14, 'G#1', 0.7],   // Ab
+          [15, 'A#1', 0.65],  // Bb
         ]),
       },
     },

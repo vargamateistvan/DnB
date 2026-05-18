@@ -1,9 +1,13 @@
+import { useMemo } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import type { KitId } from '../types'
 
-// 1 octave, B2 (top) → C2 (bottom)
-const NOTES: string[] = [
+const NOTES_2OCT: string[] = [
+  'B3','A#3','A3','G#3','G3','F#3','F3','E3','D#3','D3','C#3','C3',
+  'B2','A#2','A2','G#2','G2','F#2','F2','E2','D#2','D2','C#2','C2',
+]
+const NOTES_1OCT: string[] = [
   'B2','A#2','A2','G#2','G2','F#2','F2','E2','D#2','D2','C#2','C2',
 ]
 
@@ -45,6 +49,16 @@ export function PianoRollGrid({ kitId }: Props) {
   for (let i = 0; i < trackStepCount; i += 4) groups.push([i, i + 1, i + 2, i + 3])
 
   if (!bassTrack) return null
+
+  // Show 2 octaves only when active notes require it (any note in octave 3+)
+  const NOTES = useMemo(() => {
+    const needs2Oct = bassTrack.steps.some((s) => {
+      if (!s.active) return false
+      const oct = parseInt((s.note ?? 'C2').match(/\d+/)?.[0] ?? '2')
+      return oct >= 3
+    })
+    return needs2Oct ? NOTES_2OCT : NOTES_1OCT
+  }, [bassTrack.steps])
 
   return (
     <div

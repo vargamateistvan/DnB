@@ -193,6 +193,7 @@ interface SequencerActions {
   loadSongPreset: (preset: SongPreset) => void
   undo: () => void
   redo: () => void
+  resetAll: () => void
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────────
@@ -386,10 +387,14 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
     pushHistory(get().tracks)
     set((state) => {
       const kitTrackIds = new Set(MACHINE_TRACKS[kitId].map((t) => t.id))
+      const sc = (preset.stepCount ?? state.stepCount) as StepCount
+      const scChanged = sc !== state.stepCount
       return {
-        tracks: state.tracks.map((t) =>
-          kitTrackIds.has(t.id) ? applyPresetSteps(t, preset.tracks[t.id]) : t
-        ),
+        ...(scChanged ? { stepCount: sc } : {}),
+        tracks: state.tracks.map((t) => {
+          const resized = scChanged ? { ...t, steps: resizeSteps(t.steps, sc) } : t
+          return kitTrackIds.has(t.id) ? applyPresetSteps(resized, preset.tracks[t.id]) : resized
+        }),
       }
     })
   },
@@ -474,6 +479,26 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
       _history.push(state.tracks.map((t) => ({ ...t, steps: t.steps.map((s) => ({ ...s })) })))
       return { tracks: next }
     }),
+
+  resetAll: () => {
+    _history.length = 0
+    _future.length = 0
+    set({
+      tracks: DEFAULT_TRACKS,
+      bpm: 174,
+      swing: 0,
+      masterTune: 440,
+      stepCount: 16,
+      isPlaying: false,
+      currentStep: 0,
+      kit: 'tr808',
+      activeKits: ['tr808'],
+      mutedKits: [],
+      trackKits: {},
+      machineParams: DEFAULT_MACHINE_PARAMS,
+      activePresets: {},
+    })
+  },
   }),
   {
     name: 'dnb-sequencer',
@@ -494,9 +519,19 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
     merge: (persisted, current) => {
       const p = persisted as Partial<SequencerState>
       const d = DEFAULT_MACHINE_PARAMS
+      // Always start from the canonical base tracks so no built-in track can go missing
+      // (e.g. sh101_bass absent in an older localStorage save).
+      // Base tracks keep their persisted state; custom tracks are appended after.
+      const baseMap = new Map(current.tracks.map((t) => [t.id, t]))
+      const persistedMap = new Map((p.tracks ?? []).map((t) => [t.id, t]))
+      const tracks = [
+        ...current.tracks.map((t) => persistedMap.get(t.id) ?? t),
+        ...(p.tracks ?? []).filter((t) => !baseMap.has(t.id)),
+      ]
       return {
         ...current,
         ...p,
+        tracks,
         masterTune: p.masterTune ?? 440,
         machineParams: {
           tr808: { ...d.tr808, ...p.machineParams?.tr808 },

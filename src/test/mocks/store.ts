@@ -68,4 +68,5 @@ export const mockState: SequencerState & Record<string, unknown> = {
   setStepProbability: vi.fn(),
   undo: vi.fn(),
   redo: vi.fn(),
+  resetAll: vi.fn(),
 }

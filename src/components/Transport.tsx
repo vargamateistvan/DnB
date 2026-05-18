@@ -400,6 +400,7 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
   const [showHelp, setShowHelp]         = useState(false)
   const [showSongs, setShowSongs]       = useState(false)
   const [showSongPresets, setShowSongPresets] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [recording, setRecording]       = useState(false)
   const tapTimesRef  = useRef<number[]>([])
   const tapResetRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -419,6 +420,7 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
   const setStepCount   = useSequencerStore((s) => s.setStepCount)
   const toggleKit      = useSequencerStore((s) => s.toggleKit)
   const loadSongPreset = useSequencerStore((s) => s.loadSongPreset)
+  const resetAll       = useSequencerStore((s) => s.resetAll)
 
   const handleTap = useCallback(() => {
     const now = Date.now()
@@ -632,6 +634,13 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
               onMouseEnter={(e) => { e.currentTarget.style.color = '#fff' }}
               onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM }}
             >? How to use</button>
+            <button
+              onClick={() => { setMenuOpen(false); setShowResetConfirm(true) }}
+              className="text-left font-mono text-[10px] uppercase tracking-widest transition-colors"
+              style={{ color: TEXT_DIM }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#f87171' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM }}
+            >⟳ Reset everything</button>
             <a
               href="https://github.com/vargamateistvan/DnB/issues"
               target="_blank"
@@ -729,7 +738,7 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
       {/* Oscilloscope */}
       <Oscilloscope width={100} height={24} />
 
-      {/* Right: MIDI + record + menu */}
+      {/* Right: MIDI + record + reset + menu */}
       <div className="flex items-center gap-3 ml-auto shrink-0">
         <button
           onClick={importMidi}
@@ -748,6 +757,15 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
           title="Export MIDI"
         >↓MIDI</button>
+
+        <button
+          onClick={() => setShowResetConfirm(true)}
+          className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
+          style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
+          title="Reset all machines and settings"
+        >RST</button>
 
         <button
           onClick={toggleRecord}
@@ -798,6 +816,13 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
               onMouseEnter={(e) => { e.currentTarget.style.color = '#fff' }}
               onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM }}
             >? How to use</button>
+            <button
+              onClick={() => { setMenuOpen(false); setShowResetConfirm(true) }}
+              className="text-left font-mono text-[10px] uppercase tracking-widest transition-colors"
+              style={{ color: TEXT_DIM }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#f87171' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM }}
+            >⟳ Reset everything</button>
             <a
               href="https://github.com/vargamateistvan/DnB/issues"
               target="_blank"
@@ -818,6 +843,44 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
       {mobileLayout}
       {desktopLayout}
       {showHelp && <HowToUseModal onClose={() => setShowHelp(false)} />}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.82)' }}
+          onClick={() => setShowResetConfirm(false)}
+        >
+          <div
+            className="flex flex-col gap-5 px-6 py-5"
+            style={{ background: '#191919', border: `1px solid #3a3a3a`, borderRadius: '6px', minWidth: '280px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-1">
+              <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: '15px', letterSpacing: '0.12em', color: '#fff' }}>
+                RESET EVERYTHING
+              </span>
+              <span className="font-mono text-[10px]" style={{ color: TEXT_DIM }}>
+                All patterns, BPM, and machine settings will be cleared. This cannot be undone.
+              </span>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 h-8 font-mono text-[10px] font-bold transition-all"
+                style={{ background: 'transparent', border: '1px solid #333', borderRadius: '3px', color: TEXT_DIM }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#555'; e.currentTarget.style.color = '#ccc' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
+              >CANCEL</button>
+              <button
+                onClick={() => { resetAll(); onStop(); setShowResetConfirm(false) }}
+                className="px-4 h-8 font-mono text-[10px] font-bold transition-all"
+                style={{ background: '#f87171', border: '1px solid #f87171', borderRadius: '3px', color: '#000' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#fca5a5' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#f87171' }}
+              >RESET</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showSongs && (
         <SongLibraryDialog
           songs={songs}

@@ -94,21 +94,30 @@ function resolveAccentLevel(mp: MachineParams, trackId: string): number {
   return 0
 }
 
-function sweepBassFilter(filter: Tone.Filter, trackId: string, mp: MachineParams, time: number) {
+function sweepBassFilter(filter: Tone.Filter, trackId: string, mp: MachineParams, time: number, vel: number) {
   if (trackId === 'tb303_bass') {
     const p = mp.tb303
+    // vel is already boosted by accentLevel; threshold 0.9 maps to original step velocity ≥ ~0.8
+    const isAccented = vel > 0.9
     const base = Math.max(50, 100 + p.cutoff * 7900)
-    const peak = base * Math.pow(2, p.envMod * 5)
+    // Accent boosts env mod AND dramatically extends decay — this IS the 303 acid signature
+    const envMod = isAccented ? Math.min(1, p.envMod + p.accent * 0.45) : p.envMod
+    const peak = base * Math.pow(2, envMod * 5)
+    const decayTime = isAccented
+      ? (0.05 + p.decay * 1.95) * (1 + p.accent * 4)
+      : 0.05 + p.decay * 1.95
     filter.frequency.cancelScheduledValues(time)
     filter.frequency.setValueAtTime(peak, time)
-    filter.frequency.exponentialRampToValueAtTime(base, time + 0.05 + p.decay * 1.95)
+    filter.frequency.exponentialRampToValueAtTime(base, time + decayTime)
   } else if (trackId === 'sh101_bass') {
     const p = mp.sh101
     const base = Math.max(50, 80 + p.vcfFreq * 7920)
-    const peak = Math.min(base * Math.pow(2, p.vcfEnv * 3) * (1 + p.vcfMod * 2), 18000)
+    const peak = Math.min(base * Math.pow(2, p.vcfEnv * 4) * (1 + p.vcfMod), 18000)
+    // vcfEnv now controls both sweep amount and decay time
+    const decayTime = 0.03 + p.vcfEnv * 0.7
     filter.frequency.cancelScheduledValues(time)
     filter.frequency.setValueAtTime(peak, time)
-    filter.frequency.exponentialRampToValueAtTime(base, time + 0.25)
+    filter.frequency.exponentialRampToValueAtTime(base, time + decayTime)
   }
 }
 
@@ -131,9 +140,12 @@ export function useAudioEngine() {
   const ampEnvsRef = useRef<Record<string, Tone.AmplitudeEnvelope>>({})
   const subOscRef = useRef<Record<string, Tone.Synth>>({})
   const subGainRef = useRef<Record<string, Tone.Gain>>({})
+  const sh101ChorusRef = useRef<Tone.Chorus | null>(null)
+  const sh101LfoRef    = useRef<Tone.LFO | null>(null)
   const seqRef = useRef<Tone.Sequence | null>(null)
   const masterRef = useRef<Tone.Compressor | null>(null)
   const tapRef = useRef<Tone.Gain | null>(null)
+  const distortionRef = useRef<Record<string, Tone.Distortion>>({})
 
   // TR-909 tracks that get an AmplitudeEnvelope node for decay control
   const TR909_AMP_IDS = new Set(['tr909_kick','tr909_snare','tr909_tom_lo','tr909_tom_hi','tr909_hihat_open'])
@@ -178,7 +190,15 @@ export function useAudioEngine() {
           const filter = new Tone.Filter({ type: 'lowpass', rolloff: -24, frequency: 1200, Q: 8 })
           filtersRef.current[id] = filter
           synth.connect(filter)
-          filter.connect(ch)
+          if (id === 'tb303_bass') {
+            // Soft-clip waveshaper after filter for 303's characteristic grit
+            const dist = new Tone.Distortion({ distortion: 0.2, wet: 0.4 })
+            distortionRef.current[id] = dist
+            filter.connect(dist)
+            dist.connect(ch)
+          } else {
+            filter.connect(ch)
+          }
         } else if (TR909_AMP_IDS.has(id)) {
           const ampEnv = new Tone.AmplitudeEnvelope({ attack: 0.001, decay: 0.5, sustain: 0, release: 0.01 })
           ampEnvsRef.current[id] = ampEnv
@@ -195,7 +215,7 @@ export function useAudioEngine() {
     if (sh101Filter) {
       const subOsc = new Tone.Synth({
         oscillator: { type: 'square' },
-        envelope: { attack: 0.001, decay: 0.4, sustain: 0.1, release: 0.2 },
+        envelope: { attack: 0.002, decay: 0.25, sustain: 0.2, release: 0.12 },
       })
       const subGain = new Tone.Gain(0)
       subOsc.connect(subGain)
@@ -204,18 +224,44 @@ export function useAudioEngine() {
       subGainRef.current['sh101_bass'] = subGain
     }
 
+    // SH-101 BBD chorus — the hardware's built-in 3-stage chorus is central to its character.
+    // Inserted between filter and channel: filter → chorus → channel.
+    // NOTE: chorus.start() is deferred to play() to comply with browser autoplay policy.
+    const sh101Ch = channelsRef.current['sh101_bass']
+    if (sh101Filter && sh101Ch) {
+      sh101Filter.disconnect()
+      const chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0.3 })
+      sh101ChorusRef.current = chorus
+      sh101Filter.connect(chorus)
+      chorus.connect(sh101Ch)
+    }
+
+    // SH-101 PWM LFO — animates pulse width for the oscillator's characteristic "breathing".
+    // min/max start equal at 0.5 (square, no mod); MOD fader widens the range.
+    // NOTE: pwmLfo.start() is deferred to play() to comply with browser autoplay policy.
+    const sh101Synth = synthsRef.current['sh101_bass']
+    if (sh101Synth instanceof Tone.MonoSynth) {
+      const pwmLfo = new Tone.LFO({ type: 'sine', frequency: 0.8, min: 0.5, max: 0.5 })
+      sh101LfoRef.current = pwmLfo
+      try { pwmLfo.connect((sh101Synth.oscillator as any).width) } catch { /* sawtooth has no width */ }
+    }
+
     return () => {
       master.dispose()
       tap.dispose()
       reverb.dispose()
+      sh101ChorusRef.current?.dispose()
+      sh101LfoRef.current?.dispose()
       Object.values(synthsRef.current).forEach((s) => { s.disconnect(); s.dispose() })
       Object.values(channelsRef.current).forEach((ch) => ch.dispose())
       Object.values(filtersRef.current).forEach((f) => f.dispose())
+      Object.values(distortionRef.current).forEach((d) => d.dispose())
       Object.values(subOscRef.current).forEach((s) => { s.disconnect(); s.dispose() })
       Object.values(subGainRef.current).forEach((g) => g.dispose())
       synthsRef.current = {}
       channelsRef.current = {}
       filtersRef.current = {}
+      distortionRef.current = {}
       subOscRef.current = {}
       subGainRef.current = {}
     }
@@ -264,7 +310,12 @@ export function useAudioEngine() {
     if (sh101Filter) {
       const p = machineParams.sh101
       sh101Filter.frequency.value = Math.max(50, 80 + p.vcfFreq * 7920)
-      sh101Filter.Q.value = 1 + p.vcfRes * 11
+      sh101Filter.Q.value = 1 + p.vcfRes * 17  // wider Q range for self-oscillation character
+    }
+    // TB-303 distortion drive — accent level influences grit
+    const tb303Dist = distortionRef.current['tb303_bass']
+    if (tb303Dist) {
+      tb303Dist.wet.value = 0.2 + machineParams.tb303.accent * 0.4
     }
     // TR-808 kick / tom pitch (detune in cents, ±1200 = ±1 octave)
     const p808 = machineParams.tr808
@@ -294,6 +345,17 @@ export function useAudioEngine() {
     // SH-101 sub oscillator level
     const subGain = subGainRef.current['sh101_bass']
     if (subGain) subGain.gain.value = machineParams.sh101.subOsc
+
+    // SH-101 chorus wet + PWM LFO depth — both driven by the MOD fader
+    const sh101Chorus = sh101ChorusRef.current
+    if (sh101Chorus) sh101Chorus.wet.value = 0.2 + machineParams.sh101.vcfMod * 0.5
+    const sh101Lfo = sh101LfoRef.current
+    if (sh101Lfo) {
+      const depth = machineParams.sh101.vcfMod * 0.2
+      sh101Lfo.min = 0.5 - depth
+      sh101Lfo.max = 0.5 + depth
+      sh101Lfo.frequency.value = 0.5 + machineParams.sh101.vcfMod * 3.5
+    }
 
     // TR-909 per-instrument decay via AmplitudeEnvelope
     const p909 = machineParams.tr909
@@ -381,7 +443,7 @@ export function useAudioEngine() {
           }
 
           const filter = filtersRef.current[track.id]
-          if (filter) sweepBassFilter(filter, track.id, mp, time)
+          if (filter) sweepBassFilter(filter, track.id, mp, time, vel)
         })
       },
       steps,
@@ -393,6 +455,9 @@ export function useAudioEngine() {
 
   const play = useCallback(async () => {
     await Tone.start()
+    // Start LFO-based nodes here — requires AudioContext to be running first
+    sh101ChorusRef.current?.start()
+    sh101LfoRef.current?.start()
     seqRef.current?.start(0)
     Tone.getTransport().start()
     setPlaying(true)

@@ -61,10 +61,8 @@ describe('PianoRollGrid — TB-303', () => {
 
     // All step cells are buttons with no text (aria role=button, no text content for inactive cells)
     const allButtons = screen.getAllByRole('button')
-    // Each row has 16 step buttons; C2 is the last row (index 11 in NOTES array)
-    // Rows: B2, A#2, A2, G#2, G2, F#2, F2, E2, D#2, D2, C#2, C2
-    // With 16 steps per row and 12 rows: C2 row starts at button index 11*16=176
-    // But there are no other non-step buttons in PianoRollGrid
+    // Each row has 16 step buttons; C2 is the last row (index 11 in NOTES_1OCT — 1 octave B2→C2)
+    // No active notes in mock → 1 octave shown → C2 row starts at button index 11*16=176
     const c2RowStart = 11 * 16
     const c2FirstButton = allButtons[c2RowStart]
     expect(c2FirstButton).toBeDefined()
