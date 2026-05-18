@@ -77,7 +77,7 @@ export interface SequencerState {
   bpm: number
   swing: number
   masterTune: number  // Hz, 432–444, default 440
-  stepCount: 16 | 32 | 64
+  stepCount: 16 | 32 | 64 | 128
   isPlaying: boolean
   currentStep: number
   kit: KitId

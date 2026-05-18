@@ -10,10 +10,11 @@ function midiToNoteName(midi: number): string {
   return `${NOTE_NAMES[midi % 12]}${octave}`
 }
 
-function snapStepCount(maxStep: number): 16 | 32 | 64 {
+function snapStepCount(maxStep: number): 16 | 32 | 64 | 128 {
   if (maxStep <= 15) return 16
   if (maxStep <= 31) return 32
-  return 64
+  if (maxStep <= 63) return 64
+  return 128
 }
 
 function guessSynthType(name: string): SynthType {
@@ -56,7 +57,7 @@ function emptySteps(count: number): Step[] {
   return Array.from({ length: count }, () => ({ active: false, velocity: 0.8 }))
 }
 
-function padSteps(steps: Step[], targetCount: 16 | 32 | 64): Step[] {
+function padSteps(steps: Step[], targetCount: 16 | 32 | 64 | 128): Step[] {
   if (steps.length >= targetCount) return steps.slice(0, targetCount)
   return [...steps, ...emptySteps(targetCount - steps.length)]
 }
@@ -64,7 +65,7 @@ function padSteps(steps: Step[], targetCount: 16 | 32 | 64): Step[] {
 export interface ImportResult {
   tracks: Track[]
   bpm: number
-  stepCount: 16 | 32 | 64
+  stepCount: 16 | 32 | 64 | 128
 }
 
 function parseMidi(buffer: ArrayBuffer): ImportResult {

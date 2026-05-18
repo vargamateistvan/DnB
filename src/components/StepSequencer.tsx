@@ -253,7 +253,7 @@ export function StepSequencer({ onPadTrigger }: Props) {
 
               {/* Per-track step count */}
               <div className="shrink-0 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                {([16, 32, 64] as const).map((n) => (
+                {(([16, 32, 64, 128] as const)).map((n) => (
                   <button
                     key={n}
                     onClick={() => setTrackStepCount(track.id, n)}

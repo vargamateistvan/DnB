@@ -5,7 +5,7 @@ import { DEFAULT_MACHINE_PARAMS, MACHINE_TRACKS } from '../machines'
 import type { MachinePreset, PresetStep } from '../presets'
 import type { SongPreset } from '../songPresets'
 
-type StepCount = 16 | 32 | 64
+type StepCount = 16 | 32 | 64 | 128
 
 const makeSteps = (count: StepCount): Step[] =>
   Array.from({ length: count }, () => ({ active: false, velocity: 0.8 }))
@@ -436,7 +436,7 @@ export const useSequencerStore = create<SequencerState & SequencerActions>()(
 
   loadSongPreset: (preset) => {
     pushHistory(get().tracks)
-    const sc = (preset.stepCount ?? 16) as 16 | 32 | 64
+    const sc = (preset.stepCount ?? 16) as StepCount
     set((state) => {
       const newTracks = state.tracks.map((t) => {
         const resized = { ...t, steps: resizeSteps(t.steps, sc) }

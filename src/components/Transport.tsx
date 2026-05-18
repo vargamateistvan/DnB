@@ -134,7 +134,7 @@ const HOW_TO_SECTIONS: { title: string; items: string[] }[] = [
     items: [
       'TAP the TAP button 2+ times to set BPM from your rhythm',
       'SWG slider adds a shuffle/swing feel to the groove',
-      'Choose 16, 32, or 64 steps per pattern',
+      'Choose 16, 32, 64, or 128 steps per pattern',
       'Ctrl+Z / Ctrl+Y (Cmd on Mac) — undo / redo pattern changes',
       'RND randomizes · AMEN loads the Amen break · CLR clears all steps',
     ],
@@ -492,7 +492,7 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
     )
   })
 
-  const stepCountBtns = ([16, 32, 64] as const).map((n) => (
+  const stepCountBtns = (([16, 32, 64, 128] as const)).map((n) => (
     <button
       key={n}
       onClick={() => setStepCount(n)}
@@ -718,7 +718,7 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
 
       {/* Step count */}
       <div className="flex items-center gap-1 shrink-0">
-        {([16, 32, 64] as const).map((n) => (
+        {(([16, 32, 64, 128] as const)).map((n) => (
           <button
             key={n}
             onClick={() => setStepCount(n)}

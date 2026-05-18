@@ -8,7 +8,7 @@ export interface PresetStep {
 
 export interface MachinePreset {
   name: string
-  stepCount?: 16 | 32 | 64
+  stepCount?: 16 | 32 | 64 | 128
   tracks: Partial<Record<string, PresetStep[]>>
 }
 

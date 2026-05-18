@@ -5,7 +5,7 @@ export interface SongPreset {
   name: string
   artist: string
   bpm: number
-  stepCount?: 16 | 32 | 64
+  stepCount?: 16 | 32 | 64 | 128
   activeKits: KitId[]
   machineParams?: Partial<{ [K in KitId]: Partial<MachineParams[K]> }>
   tracks: Partial<Record<string, PresetStep[]>>
