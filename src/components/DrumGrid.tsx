@@ -367,7 +367,8 @@ export function DrumGrid({ kitId, onPadTrigger }: Props) {
             ref={popoverRef}
             className="fixed z-50 flex flex-col gap-2.5 p-3"
             style={{
-              left: popover.x, top: popover.y,
+              left: Math.min(Math.max(popover.x, 95), (typeof window !== 'undefined' ? window.innerWidth : 800) - 95),
+              top: popover.y,
               transform: 'translate(-50%, 8px)',
               background: '#1c1c1c', border: '1px solid #333',
               borderRadius: '5px', minWidth: '170px',

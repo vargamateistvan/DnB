@@ -656,136 +656,143 @@ export function Transport({ onPlay, onStop, connectToRecorder }: Props) {
     </div>
   )
 
-  // ── Desktop layout (≥ md) ──────────────────────────────────────────────────
+  // ── Desktop layout (≥ md) — two rows ──────────────────────────────────────
   const desktopLayout = (
     <div
-      className="hidden md:flex shrink-0 items-center gap-5 px-4 h-10 border-b select-none relative"
+      className="hidden md:flex flex-col shrink-0 border-b select-none relative"
       style={{ background: BG, borderColor: BORDER }}
     >
-      {/* Machine tabs */}
-      <div className="flex items-center gap-4">
-        {kitTabs}
-      </div>
+      {/* Row 1: machine tabs · play · step count · oscilloscope · actions */}
+      <div className="flex items-center gap-4 px-4 h-10">
+        <div className="flex items-center gap-4">
+          {kitTabs}
+        </div>
 
-      <div className="w-px h-5 shrink-0" style={{ background: BORDER }} />
+        <div className="w-px h-5 shrink-0" style={{ background: BORDER }} />
 
-      {playStopBtn}
+        {playStopBtn}
 
-      <div className="w-px h-5 shrink-0" style={{ background: BORDER }} />
+        <div className="w-px h-5 shrink-0" style={{ background: BORDER }} />
 
-      {/* BPM */}
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: TEXT_DIM }}>BPM</span>
-        <input
-          type="range" min={60} max={220} step={1} value={bpm}
-          onChange={(e) => setBpm(Number(e.target.value))}
-          className="w-24 cursor-pointer"
-          style={{ accentColor: '#fff' }}
-        />
-        <span className="font-mono text-sm font-bold tabular-nums w-8" style={{ color: TEXT }}>{bpm}</span>
-        <button
-          onPointerDown={handleTap}
-          className="px-2 h-5 font-mono text-[10px] font-bold select-none shrink-0"
-          style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM, touchAction: 'none' }}
-        >TAP</button>
-      </div>
-
-      {/* Swing */}
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: TEXT_DIM }}>SWG</span>
-        <input
-          type="range" min={0} max={100} step={1} value={Math.round(swing * 100)}
-          onChange={(e) => setSwing(Number(e.target.value) / 100)}
-          className="w-16 cursor-pointer"
-          style={{ accentColor: '#fff' }}
-        />
-        <span className="font-mono text-[10px] tabular-nums w-6" style={{ color: TEXT_DIM }}>{Math.round(swing * 100)}%</span>
-      </div>
-
-      {/* Master tune */}
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: TEXT_DIM }}>A4</span>
-        <input
-          type="range" min={432} max={444} step={1} value={masterTune}
-          onChange={(e) => setMasterTune(Number(e.target.value))}
-          className="w-16 cursor-pointer"
-          style={{ accentColor: '#fff' }}
-        />
-        <span className="font-mono text-[10px] tabular-nums w-7" style={{ color: TEXT_DIM }}>{masterTune}</span>
-      </div>
-
-      <div className="w-px h-5 shrink-0" style={{ background: BORDER }} />
-
-      {/* Step count */}
-      <div className="flex items-center gap-1 shrink-0">
-        {(([16, 32, 64, 128] as const)).map((n) => (
-          <button
-            key={n}
-            onClick={() => setStepCount(n)}
-            className="w-7 h-5 font-mono text-[10px] font-bold transition-all"
-            style={{
-              background: stepCount === n ? '#fff' : 'transparent',
-              border: `1px solid ${stepCount === n ? '#fff' : '#333'}`,
-              borderRadius: '2px',
-              color: stepCount === n ? '#000' : TEXT_DIM,
-            }}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-
-      {/* Oscilloscope */}
-      <Oscilloscope width={100} height={24} />
-
-      {/* Right: MIDI + record + reset + menu */}
-      <div className="flex items-center gap-3 ml-auto shrink-0">
-        <button
-          onClick={importMidi}
-          className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
-          style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#4ade80'; e.currentTarget.style.color = '#4ade80' }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
-          title="Import MIDI"
-        >↑MIDI</button>
-
-        <button
-          onClick={exportMidi}
-          className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
-          style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#60a5fa'; e.currentTarget.style.color = '#60a5fa' }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
-          title="Export MIDI"
-        >↓MIDI</button>
-
-        <button
-          onClick={() => setShowResetConfirm(true)}
-          className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
-          style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
-          title="Reset all machines and settings"
-        >RST</button>
-
-        <button
-          onClick={toggleRecord}
-          className="w-6 h-6 rounded-full transition-all shrink-0"
-          style={{
-            background: recording ? '#fff' : '#ef4444',
-            boxShadow: recording ? '0 0 8px #ffffff80' : '0 0 6px #ef444480',
-          }}
-          title={recording ? 'Stop recording' : 'Record audio'}
-        />
-
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex flex-col gap-1 justify-center items-center w-6 h-6 shrink-0"
-          title="More options"
-        >
-          {[0, 1, 2].map((i) => (
-            <span key={i} className="block w-4 h-px" style={{ background: TEXT_DIM }} />
+        {/* Step count */}
+        <div className="flex items-center gap-1 shrink-0">
+          {(([16, 32, 64, 128] as const)).map((n) => (
+            <button
+              key={n}
+              onClick={() => setStepCount(n)}
+              className="w-7 h-5 font-mono text-[10px] font-bold transition-all"
+              style={{
+                background: stepCount === n ? '#fff' : 'transparent',
+                border: `1px solid ${stepCount === n ? '#fff' : '#333'}`,
+                borderRadius: '2px',
+                color: stepCount === n ? '#000' : TEXT_DIM,
+              }}
+            >
+              {n}
+            </button>
           ))}
-        </button>
+        </div>
+
+        {/* Oscilloscope */}
+        <Oscilloscope width={100} height={24} />
+
+        {/* Right: MIDI + record + reset + menu */}
+        <div className="flex items-center gap-3 ml-auto shrink-0">
+          <button
+            onClick={importMidi}
+            className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
+            style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#4ade80'; e.currentTarget.style.color = '#4ade80' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
+            title="Import MIDI"
+          >↑MIDI</button>
+
+          <button
+            onClick={exportMidi}
+            className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
+            style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#60a5fa'; e.currentTarget.style.color = '#60a5fa' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
+            title="Export MIDI"
+          >↓MIDI</button>
+
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="font-mono text-[10px] font-bold px-2 h-5 transition-all shrink-0"
+            style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#f87171' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = TEXT_DIM }}
+            title="Reset all machines and settings"
+          >RST</button>
+
+          <button
+            onClick={toggleRecord}
+            className="w-6 h-6 rounded-full transition-all shrink-0"
+            style={{
+              background: recording ? '#fff' : '#ef4444',
+              boxShadow: recording ? '0 0 8px #ffffff80' : '0 0 6px #ef444480',
+            }}
+            title={recording ? 'Stop recording' : 'Record audio'}
+          />
+
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex flex-col gap-1 justify-center items-center w-6 h-6 shrink-0"
+            title="More options"
+          >
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="block w-4 h-px" style={{ background: TEXT_DIM }} />
+            ))}
+          </button>
+        </div>
+      </div>
+
+      {/* Row 2: BPM · SWG · A4 */}
+      <div
+        className="flex items-center gap-5 px-4 h-8 border-t"
+        style={{ borderColor: BORDER }}
+      >
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: TEXT_DIM }}>BPM</span>
+          <input
+            type="range" min={60} max={220} step={1} value={bpm}
+            onChange={(e) => setBpm(Number(e.target.value))}
+            className="w-28 cursor-pointer"
+            style={{ accentColor: '#fff' }}
+          />
+          <span className="font-mono text-sm font-bold tabular-nums w-8" style={{ color: TEXT }}>{bpm}</span>
+          <button
+            onPointerDown={handleTap}
+            className="px-2 h-5 font-mono text-[10px] font-bold select-none shrink-0"
+            style={{ background: 'transparent', border: '1px solid #333', borderRadius: '2px', color: TEXT_DIM, touchAction: 'none' }}
+          >TAP</button>
+        </div>
+
+        <div className="w-px h-4 shrink-0" style={{ background: BORDER }} />
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: TEXT_DIM }}>SWG</span>
+          <input
+            type="range" min={0} max={100} step={1} value={Math.round(swing * 100)}
+            onChange={(e) => setSwing(Number(e.target.value) / 100)}
+            className="w-24 cursor-pointer"
+            style={{ accentColor: '#fff' }}
+          />
+          <span className="font-mono text-[10px] tabular-nums w-6" style={{ color: TEXT_DIM }}>{Math.round(swing * 100)}%</span>
+        </div>
+
+        <div className="w-px h-4 shrink-0" style={{ background: BORDER }} />
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: TEXT_DIM }}>A4</span>
+          <input
+            type="range" min={432} max={444} step={1} value={masterTune}
+            onChange={(e) => setMasterTune(Number(e.target.value))}
+            className="w-20 cursor-pointer"
+            style={{ accentColor: '#fff' }}
+          />
+          <span className="font-mono text-[10px] tabular-nums w-12" style={{ color: TEXT_DIM }}>{masterTune} Hz</span>
+        </div>
       </div>
 
       {/* Desktop dropdown */}

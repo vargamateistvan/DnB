@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useSequencerStore } from '../store/sequencerStore'
 import { MACHINE_THEMES, MACHINE_TRACKS } from '../machines'
 import type { KitId } from '../types'
@@ -11,9 +11,21 @@ const NOTES_1OCT: string[] = [
   'B2','A#2','A2','G#2','G2','F#2','F2','E2','D#2','D2','C#2','C2',
 ]
 
-const BTN = 28   // px — square cell size (matches DrumGrid BTN_SIZE)
-const GAP = 2    // px — gap between cells
-const GRP = 6    // px — gap between beat groups
+const BTN_BASE = 28  // px — desktop cell size
+const GAP = 2        // px — gap between cells
+const GRP = 6        // px — gap between beat groups
+
+function useBtnSize(): number {
+  const [size, setSize] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 640 ? 34 : BTN_BASE
+  )
+  useEffect(() => {
+    const update = () => setSize(window.innerWidth < 640 ? 34 : BTN_BASE)
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return size
+}
 
 // Equilateral ▲ centered in a square cell: height = (√3/2)×width ≈ 86.6%, vertical pad ≈ 6.7%
 const TRIANGLE = 'polygon(50% 6.7%, 0% 93.3%, 100% 93.3%)'
@@ -30,6 +42,7 @@ interface Props {
 }
 
 export function PianoRollGrid({ kitId }: Props) {
+  const btnSize     = useBtnSize()
   const tracks      = useSequencerStore((s) => s.tracks)
   const currentStep = useSequencerStore((s) => s.currentStep)
   const isPlaying   = useSequencerStore((s) => s.isPlaying)
@@ -66,7 +79,7 @@ export function PianoRollGrid({ kitId }: Props) {
       style={{ background: theme.bg }}
     >
       {/* Beat number row */}
-      <div className="flex mb-1" style={{ paddingLeft: `${BTN + GRP}px`, gap: `${GRP}px` }}>
+      <div className="flex mb-1" style={{ paddingLeft: `${btnSize + GRP}px`, gap: `${GRP}px` }}>
         {groups.map((group, gi) => (
           <div key={gi} className="flex" style={{ gap: `${GAP}px` }}>
             {group.map((stepIdx) => (
@@ -74,7 +87,7 @@ export function PianoRollGrid({ kitId }: Props) {
                 key={stepIdx}
                 className="text-center font-mono tabular-nums select-none"
                 style={{
-                  width: `${BTN}px`,
+                  width: `${btnSize}px`,
                   fontSize: '9px',
                   color: stepIdx % 4 === 0 ? theme.accent : theme.textDim,
                   fontWeight: stepIdx % 4 === 0 ? 'bold' : 'normal',
@@ -118,8 +131,8 @@ export function PianoRollGrid({ kitId }: Props) {
                 <div
                   className="shrink-0 flex items-center justify-center select-none font-mono"
                   style={{
-                    width: '28px',
-                    height: `${BTN}px`,
+                    width: `${btnSize}px`,
+                    height: `${btnSize}px`,
                     background: chipBg,
                     border: chipBorder,
                     borderRadius: '2px',
@@ -191,8 +204,8 @@ export function PianoRollGrid({ kitId }: Props) {
                             title={clickTitle}
                             className="select-none shrink-0"
                             style={{
-                              width: `${BTN}px`,
-                              height: `${BTN}px`,
+                              width: `${btnSize}px`,
+                              height: `${btnSize}px`,
                               clipPath,
                               borderRadius,
                               backgroundColor: color,
@@ -239,8 +252,8 @@ export function PianoRollGrid({ kitId }: Props) {
                           title={clickTitle}
                           className="select-none shrink-0 transition-all"
                           style={{
-                            width: `${BTN}px`,
-                            height: `${BTN}px`,
+                            width: `${btnSize}px`,
+                            height: `${btnSize}px`,
                             borderRadius: '2px',
                             border: 'none',
                             cursor: 'pointer',
